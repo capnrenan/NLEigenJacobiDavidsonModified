@@ -1,0 +1,6 @@
+[submodule "NLEigenSolver/vendor/Eigen"]
+	path = NLEigenSolver/vendor/Eigen
+	url = https://gitlab.com/libeigen/eigen.git
+[submodule "NLEigenSolver/vendor/spdlog"]
+	path = NLEigenSolver/vendor/spdlog
+	url = https://github.com/gabime/spdlog

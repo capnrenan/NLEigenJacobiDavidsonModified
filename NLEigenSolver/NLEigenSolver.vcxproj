@@ -59,6 +59,9 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <AdditionalIncludeDirectories>$(SolutionDir)\NLEigenSolver\vendor\Eigen; $(SolutionDir)\NLEigenSolver\vendor\spdlog\include</AdditionalIncludeDirectories>
+      <PrecompiledHeaderFile>nlpch.h</PrecompiledHeaderFile>
+      <PrecompiledHeader>Use</PrecompiledHeader>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -73,6 +76,9 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <AdditionalIncludeDirectories>$(SolutionDir)\NLEigenSolver\vendor\Eigen; $(SolutionDir)\NLEigenSolver\vendor\spdlog\include</AdditionalIncludeDirectories>
+      <PrecompiledHeaderFile>nlpch.h</PrecompiledHeaderFile>
+      <PrecompiledHeader>Use</PrecompiledHeader>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -82,7 +88,18 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\NLEigenJacobiDavidson.cpp" />
+    <ClCompile Include="src\nlpch.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="src\Log.cpp" />
     <ClCompile Include="src\NLEigenSolver.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\NLEigenJacobiDavidson.h" />
+    <ClInclude Include="src\nlpch.h" />
+    <ClInclude Include="src\Log.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
