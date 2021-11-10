@@ -22,3 +22,4 @@ public:
 #define LOG_INFO(...)   ::Log::GetCoreLogger()->info(__VA_ARGS__)
 #define LOG_TRACE(...)  ::Log::GetCoreLogger()->trace(__VA_ARGS__)
 #define LOG_FATAL(...)  ::Log::GetCoreLogger()->fatal(__VA_ARGS__)
+
