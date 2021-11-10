@@ -9,7 +9,7 @@ void Log::Init()
 	//%n - name of the Logger
 	//%v% - message
 	spdlog::set_pattern("%^[%T] %n: %v%$");
-	s_CoreLogger = spdlog::stdout_color_mt("NLEIGEN");
+	s_CoreLogger = spdlog::stdout_color_mt("LOG:");
 	s_CoreLogger->set_level(spdlog::level::trace);
 
 }

@@ -23,3 +23,12 @@ public:
 #define LOG_TRACE(...)  ::Log::GetCoreLogger()->trace(__VA_ARGS__)
 #define LOG_FATAL(...)  ::Log::GetCoreLogger()->fatal(__VA_ARGS__)
 
+#ifdef _DEBUG
+	#define ENABLE_ASSERTS
+#endif
+
+#ifdef ENABLE_ASSERTS
+#define LOG_ASSERT(x, ...) {if(!(x)) {LOG_ERROR(" Assertion Failed: {0}", __VA_ARGS__); __debugbreak();}}
+#else
+#define LOG_ASSERT(x, ...)
+#endif
