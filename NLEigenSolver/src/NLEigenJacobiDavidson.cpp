@@ -24,6 +24,123 @@ void NLEigenJacobiDavidson::execute()
 	std::vector<Eigen::MatrixXd> MM;
 	readFileAndGetStiffMassMatrices(K0, MM);
 
+	LOG_INFO("Initialize the matrices...\n");
+	//Initialize the matrices and set the matrix as zero
+	Eigen::VectorXd Omega(m_NumberOfEigenValues);
+	Eigen::VectorXd rk,dUk;
+	Eigen::MatrixXd Phi(m_Dimensions, m_NumberOfEigenValues);
+	Eigen::MatrixXd B_r(m_Dimensions, m_NumberOfEigenValues);
+	Eigen::MatrixXd Keff(m_Dimensions, m_Dimensions);
+	Eigen::MatrixXd Kn(m_Dimensions, m_Dimensions);
+	Eigen::MatrixXd Mn(m_Dimensions, m_Dimensions);
+	Eigen::MatrixXd Mlrls(m_Dimensions, m_Dimensions);
+
+	//Set as zero
+	Omega.setZero();  Phi.setZero(); B_r.setZero();
+	Keff.setZero(); Kn.setZero(); Mn.setZero(); Mlrls.setZero();
+
+	double conv, PtMP, PtKP, theta;
+	int iterK;
+
+	LOG_INFO("Processing...");
+	// Loop in each eigenvalue
+	for (int ie = 0; ie < m_NumberOfEigenValues; ie++)
+	{
+		// Set the converge
+		conv = 1.0;
+		iterK = 0;
+
+		LOG_INFO("Eigenvalue #{0}:", ie);
+
+		if (ie > 0)
+		{
+			Omega(ie) = Omega(ie - 1);
+		}
+
+		while (abs(conv) > m_TOL)
+		{
+			// Orthogonalized phi_r with respect to phi_s
+			for (int is = 0; is < ie; is++)
+			{
+				// Get the generalized freq-dependent mass matrix
+				getGeneralizedFreqDependentMassMtx(MM, Mlrls, Omega(ie), Omega(is));
+				B_r.col(ie) = Mlrls * Phi.col(is);
+
+				if (is > 0)
+				{
+					for (int el = 0; el < is ; el++)
+					{
+						//Project b_s = b_s - b_el*(b_el.t()*b_s)
+						B_r.col(is) += -B_r.col(el) * (B_r.col(el).transpose() * B_r.col(is));
+					}
+				}
+
+				// Normalize
+				B_r.col(is) = 1.0 / (sqrt(B_r.col(is).transpose() * B_r.col(is))) * B_r.col(is);
+			}
+
+			// Orthogonalize phi_e with respect to the preceding eigenvector phi
+			if (ie > 0)
+			{
+				for (int is = 0; is < ie; is++)
+				{
+					Phi.col(ie) += -B_r.col(is) * (B_r.col(is).transpose() * Phi.col(ie));
+				}
+			}
+
+			// Evaluate the effective stiffness matrix
+			getEffectiveStiffMtx(K0, MM, Keff, Omega(ie));
+			
+			// Evaluate the residual error
+			rk = -Keff * Phi.col(ie);
+
+			// Project the effective stiffness matrix
+			projectEffectiveStiffMatrix(Keff, B_r, ie);
+
+			// solve dUk
+			iterativeLinearSolver(Keff, rk, dUk);
+
+			//Project dUk
+			for (int is = 0; is < ie + 1; is++)
+			{
+				dUk += -B_r.col(is) * (B_r.col(is).transpose() * dUk);
+			}
+
+			// Update solution
+			Phi.col(ie) += dUk;
+
+			// Evaluate the Rayleigh quotient
+			getFreqDependentStiffMtx(K0, MM, Kn, Omega(ie));
+			getFreqDependentMassMtx(MM, Mn, Omega(ie));
+
+			PtMP = Phi.col(ie).transpose() * Mn * Phi.col(ie);
+			PtKP = Phi.col(ie).transpose() * Kn * Phi.col(ie);
+			theta = PtKP / PtMP;
+
+			LOG_ASSERT(PtMP < 0, "Error: Negative mass matrix!!!");
+
+			// Normalize the improved eigenvector
+			Phi.col(ie) = (1.0 / sqrt(PtMP)) * Phi.col(ie);
+
+			// Evaluate the convergence
+			conv = abs(theta - Omega(ie)) / theta;
+
+			LOG_INFO("iter: {0}    rel.error: {1}", iterK, conv);
+
+			//Update the new eigenvalue
+			Omega(ie) = theta;
+
+			// Check the max. number of iterations
+			iterK++;
+
+			if (iterK > m_MaxIter)
+			{
+				LOG_ERROR("Error: It has reached the max. number of iterations!!");
+				break;
+			}
+
+		}
+	}
 
 }
 
