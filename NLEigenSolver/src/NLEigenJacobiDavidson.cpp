@@ -146,12 +146,92 @@ void NLEigenJacobiDavidson::execute()
 
 void NLEigenJacobiDavidson::readFileAndGetStiffMassMatrices(Eigen::MatrixXd& K0, std::vector<Eigen::MatrixXd>& MM)
 {
+	//Open file to read
+	std::fstream fid;
+	fid.open(m_FilePath, std::ios::in);
 
+	//Check error
+	if (fid.fail())
+	{
+		LOG_ASSERT(fid.fail(),"ERROR: Error in opening the file!");
+		exit(1);
+	}
+
+	if (fid.is_open())
+	{
+		std::string line;
+		std::getline(fid, line);
+		// Read #dof, #mass matrices, #eigenvalues
+		fid >> m_Dimensions >> m_NumberOfMassMtx >> m_NumberOfEigenValues;
+
+		// Set the matrices
+		K0 = Eigen::MatrixXd(m_Dimensions, m_Dimensions);
+		Eigen::MatrixXd Mtemp(m_Dimensions, m_Dimensions);
+		K0.setZero(); Mtemp.setZero();
+		MM.reserve(m_NumberOfMassMtx);
+
+		// Read the stiffness matrix K0
+		for (int ii = 0; ii < m_Dimensions; ii++)
+		{
+			for (int jj = 0; jj < m_Dimensions; jj++)
+			{
+				fid >> K0(ii, jj);
+			}
+		}
+
+		LOG_INFO("Matrix K0 = \n {0}", K0);
+		//Read mass matrices
+		for (int im = 0; im < m_NumberOfMassMtx; im++)
+		{
+			for (int ii = 0; ii < m_Dimensions; ii++)
+			{
+				for (int jj = 0; jj < m_Dimensions; jj++)
+				{
+					fid >> Mtemp(ii, jj);
+				}
+			}
+
+			MM.emplace_back(Mtemp);
+		}
+	}
+
+	//Close file
+	fid.close();	
 }
 
 void NLEigenJacobiDavidson::printResults(Eigen::VectorXd& Omega, Eigen::MatrixXd& Phi) const
 {
+	// Save the eigenproblem results
+	std::string directory;
+	const size_t last_slash_idx = m_FilePath.rfind('/');
+	if (std::string::npos != last_slash_idx)
+	{
+		directory = m_FilePath.substr(0, last_slash_idx);
+	}
 
+	std::string resultFile1, resultFile2;
+	resultFile1 = directory + "/Phi.dat";
+	resultFile2 = directory + "/Omega.dat";
+
+	std::ofstream out1, out2;
+	out1.open(resultFile1);
+	out2.open(resultFile2);
+
+	if (!out1 || !out2)
+	{
+		LOG_ASSERT(false, "ERROR: Error in opening the file!");
+		exit(1);
+	}
+
+	//Save Phi
+	out1 << m_Dimensions <<  " " << m_NumberOfEigenValues << std::endl;
+	out1 << std::setprecision(12) << std::scientific << Phi;
+	out1.close();
+
+	//Save Omega
+	out2 << m_NumberOfEigenValues << std::endl;
+	out2 << std::setprecision(12) << std::scientific << Omega;
+	out2.close();
 }
 
 void NLEigenJacobiDavidson::getFreqDependentStiffMtx(const Eigen::MatrixXd& K0, const std::vector<Eigen::MatrixXd>& MM, Eigen::MatrixXd& Kn, double omega)

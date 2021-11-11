@@ -1,4 +1,5 @@
 #include "nlpch.h"
+#include "NLEigenJacobiDavidson.h"
 
 // Just to test
 template <typename T>
@@ -10,7 +11,9 @@ void printMatrix(T& A)
 
 int main(int argc, char* argv[])
 {
-	Log::Init();
+	NLEigenJacobiDavidson app("examples/K.dat");
+	app.execute();
+
 	// Run application - NonLinearEigenSolver
 	LOG_INFO("Nonlinear Eigenvalue solution!");
 	LOG_ERROR("Check error message!");
