@@ -3,6 +3,7 @@
 
 #include <Eigen/IterativeLinearSolvers>
 
+
 NLEigenJacobiDavidson::NLEigenJacobiDavidson(const std::string& filepath)
 	: m_Dimensions(0), m_NumberOfMassMtx(1), m_NumberOfEigenValues(0),
 	m_MaxIter(20), m_TOL(1e-12), m_FilePath(filepath)
@@ -25,7 +26,7 @@ void NLEigenJacobiDavidson::execute()
 	readFileAndGetStiffMassMatrices(K0, MM);
 
 	LOG_INFO("Initialize the matrices...\n");
-	//Initialize the matrices and set the matrix as zero
+	//Initialize the matrices and set them as zero
 	Eigen::VectorXd Omega(m_NumberOfEigenValues);
 	Eigen::VectorXd rk,dUk;
 	Eigen::MatrixXd Phi(m_Dimensions, m_NumberOfEigenValues);
@@ -36,9 +37,10 @@ void NLEigenJacobiDavidson::execute()
 	Eigen::MatrixXd Mlrls(m_Dimensions, m_Dimensions);
 
 	//Set as zero
-	Omega.setZero();  Phi.setZero(); B_r.setZero();
+	Omega.setZero();   B_r.setZero(); Phi.setOnes();
 	Keff.setZero(); Kn.setZero(); Mn.setZero(); Mlrls.setZero();
 
+	//Auxiliary variables
 	double conv, PtMP, PtKP, theta;
 	int iterK;
 
@@ -50,7 +52,7 @@ void NLEigenJacobiDavidson::execute()
 		conv = 1.0;
 		iterK = 0;
 
-		LOG_INFO("Eigenvalue #{0}:", ie);
+		LOG_INFO("---------------------------------\nEigenvalue #{0}:", ie);
 
 		if (ie > 0)
 		{
@@ -60,7 +62,7 @@ void NLEigenJacobiDavidson::execute()
 		while (abs(conv) > m_TOL)
 		{
 			// Orthogonalized phi_r with respect to phi_s
-			for (int is = 0; is < ie; is++)
+			for (int is = 0; is < ie + 1; is++)
 			{
 				// Get the generalized freq-dependent mass matrix
 				getGeneralizedFreqDependentMassMtx(MM, Mlrls, Omega(ie), Omega(is));
@@ -112,12 +114,11 @@ void NLEigenJacobiDavidson::execute()
 			// Evaluate the Rayleigh quotient
 			getFreqDependentStiffMtx(K0, MM, Kn, Omega(ie));
 			getFreqDependentMassMtx(MM, Mn, Omega(ie));
-
 			PtMP = Phi.col(ie).transpose() * Mn * Phi.col(ie);
 			PtKP = Phi.col(ie).transpose() * Kn * Phi.col(ie);
 			theta = PtKP / PtMP;
 
-			LOG_ASSERT(PtMP < 0, "Error: Negative mass matrix!!!");
+			LOG_ASSERT(!(PtMP < 0), "Error: Negative mass matrix!!!");
 
 			// Normalize the improved eigenvector
 			Phi.col(ie) = (1.0 / sqrt(PtMP)) * Phi.col(ie);
@@ -135,12 +136,15 @@ void NLEigenJacobiDavidson::execute()
 
 			if (iterK > m_MaxIter)
 			{
-				LOG_ERROR("Error: It has reached the max. number of iterations!!");
+				LOG_ASSERT(false,"Error: It has reached the max. number of iterations!!");
 				break;
 			}
 
 		}
 	}
+
+	//Print results
+	printResults(Omega, Phi);
 
 }
 
@@ -154,7 +158,6 @@ void NLEigenJacobiDavidson::readFileAndGetStiffMassMatrices(Eigen::MatrixXd& K0,
 	if (fid.fail())
 	{
 		LOG_ASSERT(fid.fail(),"ERROR: Error in opening the file!");
-		exit(1);
 	}
 
 	if (fid.is_open())
@@ -179,7 +182,6 @@ void NLEigenJacobiDavidson::readFileAndGetStiffMassMatrices(Eigen::MatrixXd& K0,
 			}
 		}
 
-		LOG_INFO("Matrix K0 = \n {0}", K0);
 		//Read mass matrices
 		for (int im = 0; im < m_NumberOfMassMtx; im++)
 		{
@@ -191,7 +193,7 @@ void NLEigenJacobiDavidson::readFileAndGetStiffMassMatrices(Eigen::MatrixXd& K0,
 				}
 			}
 
-			MM.emplace_back(Mtemp);
+			MM.emplace_back(-Mtemp);
 		}
 	}
 
@@ -202,6 +204,9 @@ void NLEigenJacobiDavidson::readFileAndGetStiffMassMatrices(Eigen::MatrixXd& K0,
 void NLEigenJacobiDavidson::printResults(Eigen::VectorXd& Omega, Eigen::MatrixXd& Phi) const
 {
 	// Save the eigenproblem results
+	LOG_INFO("Save the eigenvalues and eigenvector!");
+
+	// Get the directory path
 	std::string directory;
 	const size_t last_slash_idx = m_FilePath.rfind('/');
 	if (std::string::npos != last_slash_idx)
@@ -220,7 +225,6 @@ void NLEigenJacobiDavidson::printResults(Eigen::VectorXd& Omega, Eigen::MatrixXd
 	if (!out1 || !out2)
 	{
 		LOG_ASSERT(false, "ERROR: Error in opening the file!");
-		exit(1);
 	}
 
 	//Save Phi
@@ -289,7 +293,7 @@ void NLEigenJacobiDavidson::projectEffectiveStiffMatrix(Eigen::MatrixXd& Keff, E
 	// Project the effective stiffness matrix onto the subspace
 	// orthogonal to all preceding eigenvectors and add the orthogonal
 	// projector to make it nonsingular
-	for (int ii = 0; ii < indexEig; ii++)
+	for (int ii = 0; ii < indexEig + 1; ii++)
 	{
 		Keff += (B_s.col(ii) - Keff * B_s.col(ii)) * (B_s.col(ii).transpose());
 	}
@@ -298,22 +302,23 @@ void NLEigenJacobiDavidson::projectEffectiveStiffMatrix(Eigen::MatrixXd& Keff, E
 bool NLEigenJacobiDavidson::iterativeLinearSolver(Eigen::MatrixXd& A, Eigen::VectorXd& b, Eigen::VectorXd& x)
 {
 	// Set the iterative linear solver (Conjugate Gradients)
-	// The number of max. of iter
-	Eigen::ConjugateGradient<Eigen::MatrixXd, Eigen::Lower | Eigen::Upper> linsolver;
-	linsolver.setTolerance(1e-12);
-	linsolver.compute(A);
+	// The number of max. of iterations
+	Eigen::ConjugateGradient<Eigen::MatrixXd, Eigen::Lower, Eigen::IdentityPreconditioner> linsolver;
+	//Eigen::ConjugateGradient<Eigen::SparseMatrix<double>, Eigen::Upper> linsolver;
+	linsolver.setTolerance(1e-14);
+	linsolver.setMaxIterations(20 * m_Dimensions);
 
 	//Solve
-	x = linsolver.solve(b);
+	x = linsolver.compute(A).solve(b);
 	
-	//LOG_INFO("#Iteration: {0}   Estimated error: {1}", linsolver.iterations(), linsolver.error());
+	//LOG_INFO("#Iterations: {0},    Estimated error: {1}", linsolver.iterations(), linsolver.error());
 
 	bool status = true;
-	
-	if (linsolver.error() < 1e-12)
+
+	if (linsolver.error() > 1e-14)
 	{
 		status = false;
-		LOG_ASSERT(status,"The iterative linear solver has reach the max. iterations with error below of the tolerance!")
+		LOG_ASSERT(status, "It has reach the max number of iterations!");
 	}
 		
 	return status;

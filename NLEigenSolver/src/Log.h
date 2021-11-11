@@ -30,5 +30,5 @@ public:
 #ifdef ENABLE_ASSERTS
 #define LOG_ASSERT(x, ...) {if(!(x)) {LOG_ERROR(" Assertion Failed: {0}", __VA_ARGS__); __debugbreak();}}
 #else
-#define LOG_ASSERT(x, ...)
+#define LOG_ASSERT(x, ...) {if(!(x)) {LOG_ERROR(" Assertion Failed: {0}", __VA_ARGS__); exit(1);}}
 #endif
