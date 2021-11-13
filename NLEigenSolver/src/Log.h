@@ -17,11 +17,11 @@ public:
 };
 
 //Core log macros
-#define LOG_ERROR(...)  ::Log::GetCoreLogger()->error(__VA_ARGS__)
-#define LOG_WARN(...)   ::Log::GetCoreLogger()->warn(__VA_ARGS__)
-#define LOG_INFO(...)   ::Log::GetCoreLogger()->info(__VA_ARGS__)
-#define LOG_TRACE(...)  ::Log::GetCoreLogger()->trace(__VA_ARGS__)
-#define LOG_FATAL(...)  ::Log::GetCoreLogger()->fatal(__VA_ARGS__)
+#define LOG_ERROR(...)  Log::GetCoreLogger()->error(__VA_ARGS__)
+#define LOG_WARN(...)   Log::GetCoreLogger()->warn(__VA_ARGS__)
+#define LOG_INFO(...)   Log::GetCoreLogger()->info(__VA_ARGS__)
+#define LOG_TRACE(...)  Log::GetCoreLogger()->trace(__VA_ARGS__)
+#define LOG_FATAL(...)  Log::GetCoreLogger()->fatal(__VA_ARGS__)
 
 #ifdef _DEBUG
 	#define ENABLE_ASSERTS

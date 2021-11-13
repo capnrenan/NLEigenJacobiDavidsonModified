@@ -1,12 +1,10 @@
 #include "nlpch.h"
 #include "NLEigenJacobiDavidson.h"
 
-#include <Eigen/IterativeLinearSolvers>
-
 
 NLEigenJacobiDavidson::NLEigenJacobiDavidson(const std::string& filepath)
 	: m_Dimensions(0), m_NumberOfMassMtx(1), m_NumberOfEigenValues(0),
-	m_MaxIter(20), m_TOL(1e-12), m_FilePath(filepath)
+	m_MaxIter(20), m_TOL(1e-14), m_FilePath(filepath)
 {
 	// Initialize the log system
 	Log::Init();
@@ -25,7 +23,7 @@ void NLEigenJacobiDavidson::execute()
 	std::vector<Eigen::MatrixXd> MM;
 	readFileAndGetStiffMassMatrices(K0, MM);
 
-	LOG_INFO("Initialize the matrices...\n");
+	LOG_INFO("Initializing the matrices...\n");
 	//Initialize the matrices and set them as zero
 	Eigen::VectorXd Omega(m_NumberOfEigenValues);
 	Eigen::VectorXd rk,dUk;
@@ -41,14 +39,14 @@ void NLEigenJacobiDavidson::execute()
 	Keff.setZero(); Kn.setZero(); Mn.setZero(); Mlrls.setZero();
 
 	//Auxiliary variables
-	double conv, PtMP, PtKP, theta;
+	double conv, normBr, PtMP, PtKP, theta;
 	int iterK;
 
 	LOG_INFO("Processing...");
 	// Loop in each eigenvalue
 	for (int ie = 0; ie < m_NumberOfEigenValues; ie++)
 	{
-		// Set the converge
+		// Set the convergence parameters
 		conv = 1.0;
 		iterK = 0;
 
@@ -78,7 +76,8 @@ void NLEigenJacobiDavidson::execute()
 				}
 
 				// Normalize
-				B_r.col(is) = 1.0 / (sqrt(B_r.col(is).transpose() * B_r.col(is))) * B_r.col(is);
+				normBr = sqrt(B_r.col(is).transpose() * B_r.col(is));
+				B_r.col(is) = 1.0 / (normBr) * B_r.col(is);
 			}
 
 			// Orthogonalize phi_e with respect to the preceding eigenvector phi
@@ -207,14 +206,14 @@ void NLEigenJacobiDavidson::printResults(Eigen::VectorXd& Omega, Eigen::MatrixXd
 	LOG_INFO("Save the eigenvalues and eigenvector!");
 
 	// Get the directory path
-	std::string directory;
+	std::string directory, resultFile1, resultFile2;
 	const size_t last_slash_idx = m_FilePath.rfind('/');
 	if (std::string::npos != last_slash_idx)
 	{
 		directory = m_FilePath.substr(0, last_slash_idx);
 	}
 
-	std::string resultFile1, resultFile2;
+	
 	resultFile1 = directory + "/Phi.dat";
 	resultFile2 = directory + "/Omega.dat";
 
@@ -299,28 +298,40 @@ void NLEigenJacobiDavidson::projectEffectiveStiffMatrix(Eigen::MatrixXd& Keff, E
 	}
 }
 
-bool NLEigenJacobiDavidson::iterativeLinearSolver(Eigen::MatrixXd& A, Eigen::VectorXd& b, Eigen::VectorXd& x)
+bool NLEigenJacobiDavidson::iterativeLinearSolver(const Eigen::MatrixXd& A, const Eigen::VectorXd& b, Eigen::VectorXd& x)
 {
 	// Set the iterative linear solver (Conjugate Gradients)
 	// The number of max. of iterations
-	Eigen::ConjugateGradient<Eigen::MatrixXd, Eigen::Lower, Eigen::IdentityPreconditioner> linsolver;
+	//Eigen::ConjugateGradient<Eigen::MatrixXd, Eigen::Lower> linsolver;
 	//Eigen::ConjugateGradient<Eigen::SparseMatrix<double>, Eigen::Upper> linsolver;
-	linsolver.setTolerance(1e-14);
-	linsolver.setMaxIterations(20 * m_Dimensions);
+	//Eigen::BiCGSTAB<Eigen::MatrixXd> linsolver;
+	//linsolver.setTolerance(1.0e-14);
+	//linsolver.setMaxIterations(4 * m_Dimensions);
 
 	//Solve
-	x = linsolver.compute(A).solve(b);
+	//x = linsolver.compute(A.transpose()*A).solve(A.transpose()*b);
 	
+	// Direct solve
+	x = A.fullPivLu().solve(b);
+	//x = A.bdcSvd(Eigen::ComputeThinU | Eigen::ComputeThinV).solve(b);
+
+
+	// Check the L2 norm
+	double relative_error1 = (A * x - b).norm() / b.norm();
+	
+	//LOG_WARN("Relative error(L2 norm) BDCSVD = {0}", relative_error1);
+	//LOG_WARN("Relative error(L2 norm) fullPivLu = {0}", relative_error1);
+
 	//LOG_INFO("#Iterations: {0},    Estimated error: {1}", linsolver.iterations(), linsolver.error());
 
 	bool status = true;
 
-	if (linsolver.error() > 1e-14)
+	/*if (linsolver.error() > 1.0e-14)
 	{
 		status = false;
 		LOG_ASSERT(status, "It has reach the max number of iterations!");
 	}
-		
+		*/
 	return status;
 }
 
