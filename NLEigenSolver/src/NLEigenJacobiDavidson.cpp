@@ -207,15 +207,15 @@ void NLEigenJacobiDavidson::printResults(Eigen::VectorXd& Omega, Eigen::MatrixXd
 
 	// Get the directory path
 	std::string directory, resultFile1, resultFile2;
-	const size_t last_slash_idx = m_FilePath.rfind('/');
+	const size_t last_slash_idx = m_FilePath.rfind('\\');
 	if (std::string::npos != last_slash_idx)
 	{
 		directory = m_FilePath.substr(0, last_slash_idx);
 	}
 
 	
-	resultFile1 = directory + "/Phi.dat";
-	resultFile2 = directory + "/Omega.dat";
+	resultFile1 = directory + "\\Phi.dat";
+	resultFile2 = directory + "\\Omega.dat";
 
 	std::ofstream out1, out2;
 	out1.open(resultFile1);

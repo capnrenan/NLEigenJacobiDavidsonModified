@@ -4,7 +4,10 @@
 
 int main(int argc, char* argv[])
 {
-	NLEigenJacobiDavidson* app = new NLEigenJacobiDavidson("examples/K.dat");
+	//std::string filepath;
+	//std::cin >> filepath;
+	//NLEigenJacobiDavidson* app = new NLEigenJacobiDavidson("examples/K.dat");
+	NLEigenJacobiDavidson* app = new NLEigenJacobiDavidson(argv[1]);
 	app->execute();
 
 	delete app;
