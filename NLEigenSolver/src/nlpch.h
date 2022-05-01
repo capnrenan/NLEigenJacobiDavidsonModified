@@ -10,4 +10,5 @@
 #include "Log.h"
 
 #include <Eigen/Dense>
+#include <Eigen/Core>
 //#include <Eigen/IterativeLinearSolvers>

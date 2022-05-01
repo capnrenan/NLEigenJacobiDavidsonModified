@@ -4,21 +4,19 @@
 class NLEigenJacobiDavidson
 {
 	// Properties
-public:
+private:
 	int m_Dimensions;
 	int m_NumberOfMassMtx;
 	int m_NumberOfEigenValues;
 	int m_MaxIter;
 	double m_TOL;
 	std::string m_FilePath;
-private:
 
-	//Methods
 public:
 	NLEigenJacobiDavidson(const std::string& filepath);
 	~NLEigenJacobiDavidson();
 
-	void execute();
+	bool execute();
 
 private:
 	void readFileAndGetStiffMassMatrices(Eigen::MatrixXd& K0, std::vector<Eigen::MatrixXd>& MM);

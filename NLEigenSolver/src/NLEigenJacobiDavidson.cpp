@@ -8,6 +8,7 @@ NLEigenJacobiDavidson::NLEigenJacobiDavidson(const std::string& filepath)
 {
 	// Initialize the log system
 	Log::Init();
+	Eigen::initParallel();
 }
 
 NLEigenJacobiDavidson::~NLEigenJacobiDavidson()
@@ -15,7 +16,7 @@ NLEigenJacobiDavidson::~NLEigenJacobiDavidson()
 
 }
 
-void NLEigenJacobiDavidson::execute()
+bool NLEigenJacobiDavidson::execute()
 {
 	//Reading data
 	LOG_INFO("Reading filedata...\n");
@@ -33,6 +34,8 @@ void NLEigenJacobiDavidson::execute()
 	Eigen::MatrixXd Kn(m_Dimensions, m_Dimensions);
 	Eigen::MatrixXd Mn(m_Dimensions, m_Dimensions);
 	Eigen::MatrixXd Mlrls(m_Dimensions, m_Dimensions);
+
+	LOG_INFO("Solving with TOL = {0}\n", m_TOL);
 
 	//Set as zero
 	Omega.setZero();   B_r.setZero(); Phi.setOnes();
@@ -136,7 +139,7 @@ void NLEigenJacobiDavidson::execute()
 			if (iterK > m_MaxIter)
 			{
 				LOG_ASSERT(false,"Error: It has reached the max. number of iterations!!");
-				break;
+				return false;
 			}
 
 		}
@@ -145,6 +148,7 @@ void NLEigenJacobiDavidson::execute()
 	//Print results
 	printResults(Omega, Phi);
 
+	return true;
 }
 
 void NLEigenJacobiDavidson::readFileAndGetStiffMassMatrices(Eigen::MatrixXd& K0, std::vector<Eigen::MatrixXd>& MM)
@@ -164,7 +168,7 @@ void NLEigenJacobiDavidson::readFileAndGetStiffMassMatrices(Eigen::MatrixXd& K0,
 		std::string line;
 		std::getline(fid, line);
 		// Read #dof, #mass matrices, #eigenvalues
-		fid >> m_Dimensions >> m_NumberOfMassMtx >> m_NumberOfEigenValues;
+		fid >> m_Dimensions >> m_NumberOfMassMtx >> m_NumberOfEigenValues >> m_TOL;
 
 		// Set the matrices
 		K0 = Eigen::MatrixXd(m_Dimensions, m_Dimensions);
@@ -227,13 +231,13 @@ void NLEigenJacobiDavidson::printResults(Eigen::VectorXd& Omega, Eigen::MatrixXd
 	}
 
 	//Save Phi
-	out1 << m_Dimensions <<  " " << m_NumberOfEigenValues << std::endl;
-	out1 << std::setprecision(12) << std::scientific << Phi;
+	//out1 << m_Dimensions <<  " " << m_NumberOfEigenValues << std::endl;
+	out1 << std::setprecision(16) << std::scientific << Phi;
 	out1.close();
 
 	//Save Omega
-	out2 << m_NumberOfEigenValues << std::endl;
-	out2 << std::setprecision(12) << std::scientific << Omega;
+	//out2 << m_NumberOfEigenValues << std::endl;
+	out2 << std::setprecision(16) << std::scientific << Omega;
 	out2.close();
 }
 
@@ -313,6 +317,11 @@ bool NLEigenJacobiDavidson::iterativeLinearSolver(const Eigen::MatrixXd& A, cons
 	
 	// Direct solve
 	x = A.fullPivLu().solve(b);
+	//Eigen::LLT<Eigen::MatrixXd> llt;
+
+	//llt.compute(A);
+	//x = llt.solve(b);
+	//x = (A.adjoint() * A).llt().solve((A.adjoint() * b));
 	//x = A.bdcSvd(Eigen::ComputeThinU | Eigen::ComputeThinV).solve(b);
 
 

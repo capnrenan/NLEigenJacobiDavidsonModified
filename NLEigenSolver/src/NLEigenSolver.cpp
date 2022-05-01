@@ -8,8 +8,11 @@ int main(int argc, char* argv[])
 	//std::cin >> filepath;
 	//NLEigenJacobiDavidson* app = new NLEigenJacobiDavidson("examples/K.dat");
 	NLEigenJacobiDavidson* app = new NLEigenJacobiDavidson(argv[1]);
-	app->execute();
+	bool status = app->execute();
 
 	delete app;
-	return 0;
+	if (status)
+		return 0;
+	else
+		return 1;
 }
