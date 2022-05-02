@@ -9,6 +9,15 @@
 
 #include "Log.h"
 
-#include <Eigen/Dense>
-#include <Eigen/Core>
-//#include <Eigen/IterativeLinearSolvers>
+//#define ENABLE_BLAZE
+
+#ifdef ENABLE_BLAZE
+	#include <blaze/Math.h>
+#else
+	#include <Eigen/Dense>
+	#include <Eigen/Core>
+#endif
+
+
+
+
