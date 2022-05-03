@@ -9,7 +9,7 @@
 
 #include "Log.h"
 
-//#define ENABLE_BLAZE
+#define ENABLE_BLAZE
 
 #ifdef ENABLE_BLAZE
 	#include <blaze/Math.h>

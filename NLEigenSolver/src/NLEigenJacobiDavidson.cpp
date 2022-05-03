@@ -29,7 +29,7 @@ bool NLEigenJacobiDavidson::execute()
 	LOG_INFO("Initializing the matrices...\n");
 	//Initialize the matrices and set them as zero
 	blaze::DynamicVector<double, blaze::columnVector> Omega(m_NumberOfEigenValues);
-	blaze::DynamicVector<double, blaze::columnVector> rk, dUk;
+	blaze::DynamicVector<double, blaze::columnVector> rk(m_Dimensions), dUk(m_Dimensions);
 	blaze::DynamicMatrix<double, blaze::rowMajor> Phi(m_Dimensions, m_NumberOfEigenValues);
 	blaze::DynamicMatrix<double, blaze::rowMajor> B_r(m_Dimensions, m_NumberOfEigenValues);
 	blaze::DynamicMatrix<double, blaze::rowMajor> Keff(m_Dimensions, m_Dimensions);
@@ -40,7 +40,7 @@ bool NLEigenJacobiDavidson::execute()
 	LOG_INFO("Solving with TOL = {0}\n", m_TOL);
 
 	//Set as zero
-	Omega = 0.0;   B_r = 0.0; Phi = 0.0;
+	Omega = 0.0;   rk = 0.0; dUk = 0.0; B_r = 0.0; Phi = 1.0;
 	Keff = 0.0; Kn = 0.0; Mn = 0.0; Mlrls = 0.0;
 
 	//Auxiliary variables
@@ -87,7 +87,7 @@ bool NLEigenJacobiDavidson::execute()
 				//normBr = sqrt(B_r.col(is).transpose() * B_r.col(is));
 				//B_r.col(is) = 1.0 / (normBr)*B_r.col(is);
 				normBr = std::sqrt(blaze::trans(blaze::column(B_r,is)) * blaze::column(B_r, is));
-				blaze::column(B_r, is) = (1.0 / normBr) * blaze::column(B_r, is);
+				blaze::column(B_r, is) *= (1.0 / normBr);
 		
 			}
 
@@ -97,7 +97,7 @@ bool NLEigenJacobiDavidson::execute()
 				for (int is = 0; is < ie; is++)
 				{
 					//Phi.col(ie) += -B_r.col(is) * (B_r.col(is).transpose() * Phi.col(ie));
-					blaze::column(Phi, ie) += blaze::column(B_r, is) * (blaze::column(B_r, is), blaze::column(Phi, ie));
+					blaze::column(Phi, ie) -= blaze::column(B_r, is) * (blaze::column(B_r, is), blaze::column(Phi, ie));
 				}
 			}
 
@@ -112,6 +112,7 @@ bool NLEigenJacobiDavidson::execute()
 			projectEffectiveStiffMatrix(Keff, B_r, ie);
 
 			// solve dUk
+			//std::cout << rk << std::endl;
 			iterativeLinearSolver(Keff, rk, dUk);
 
 			//Project dUk
@@ -138,7 +139,7 @@ bool NLEigenJacobiDavidson::execute()
 
 			// Normalize the improved eigenvector
 			//Phi.col(ie) = (1.0 / sqrt(PtMP)) * Phi.col(ie);
-			blaze::column(Phi,ie) *= (1.0 / sqrt(PtMP));
+			blaze::column(Phi, ie) = (1.0 / sqrt(PtMP)) * blaze::column(Phi, ie);
 
 			// Evaluate the convergence
 			conv = abs(theta - Omega[ie]) / theta;
@@ -175,7 +176,7 @@ void NLEigenJacobiDavidson::readFileAndGetStiffMassMatrices(blaze::DynamicMatrix
 	//Check error
 	if (fid.fail())
 	{
-		LOG_ASSERT(fid.fail(), "ERROR: Error in opening the file!");
+		LOG_ASSERT(false, "ERROR: Error in opening the file!");
 	}
 
 	if (fid.is_open())
@@ -186,7 +187,8 @@ void NLEigenJacobiDavidson::readFileAndGetStiffMassMatrices(blaze::DynamicMatrix
 		fid >> m_Dimensions >> m_NumberOfMassMtx >> m_NumberOfEigenValues >> m_TOL;
 
 		// Set the matrices
-		K0(m_Dimensions, m_Dimensions) = 0.0;
+		K0 = blaze::DynamicMatrix<double, blaze::rowMajor>(m_Dimensions, m_Dimensions);
+		K0 = 0.0;
 		blaze::DynamicMatrix<double, blaze::rowMajor> Mtemp(m_Dimensions, m_Dimensions);
 		Mtemp = 0.0;
 		MM.reserve(m_NumberOfMassMtx);
@@ -226,7 +228,7 @@ void NLEigenJacobiDavidson::printResults(blaze::DynamicVector<double, blaze::col
 
 	// Get the directory path
 	std::string directory, resultFile1, resultFile2;
-	const size_t last_slash_idx = m_FilePath.rfind('\\');
+	const size_t last_slash_idx = m_FilePath.rfind('\/');
 	if (std::string::npos != last_slash_idx)
 	{
 		directory = m_FilePath.substr(0, last_slash_idx);
@@ -247,12 +249,24 @@ void NLEigenJacobiDavidson::printResults(blaze::DynamicVector<double, blaze::col
 
 	//Save Phi
 	//out1 << m_Dimensions <<  " " << m_NumberOfEigenValues << std::endl;
-	out1 << std::setprecision(16) << std::scientific << Phi;
+	//out1 << std::setprecision(16) << std::scientific << Phi;
+	for (int ii = 0; ii < Phi.columns(); ii++)
+	{
+		for (int jj = 0; jj < Phi.rows(); jj++)
+		{
+			out1 << std::setprecision(16) << std::scientific << Phi(ii,jj) << " ";
+		}
+		out1 << std::endl;
+	}
 	out1.close();
 
 	//Save Omega
 	//out2 << m_NumberOfEigenValues << std::endl;
-	out2 << std::setprecision(16) << std::scientific << Omega;
+	for (int ii = 0; ii < Omega.size(); ii++)
+	{
+		out2 << std::setprecision(16) << std::scientific << Omega[ii] << std::endl;
+	}
+	//out2 << std::setprecision(16) << std::scientific << Omega;
 	out2.close();
 }
 
@@ -263,7 +277,6 @@ void NLEigenJacobiDavidson::getFreqDependentStiffMtx(const blaze::DynamicMatrix<
 
 	for (int jj = 1; jj < m_NumberOfMassMtx; jj++)
 	{
-
 		Kn += (jj)*pow(omega, jj + 1.0) * MM[jj];
 	}
 }
@@ -284,7 +297,6 @@ void NLEigenJacobiDavidson::getGeneralizedFreqDependentMassMtx(const std::vector
 {
 	//Initialize
 	Mlrls = 0.0;
-
 	for (int jj = 0; jj < m_NumberOfMassMtx; jj++)
 	{
 		for (int kk = 0; kk < jj + 1; kk++)
@@ -320,8 +332,20 @@ bool NLEigenJacobiDavidson::iterativeLinearSolver(const blaze::DynamicMatrix<dou
 {
 	//auto temp  = blaze::solve(A, b);
 	//x = temp;
-	blaze::solve(A, x, b);   // Computing the solution x
-	return true;
+	
+	double error;
+	bool status = true;
+// #pragma omp parallel
+	{
+		blaze::solve(A, x, b);   // Computing the solution x
+		auto temp = A * x - b;
+		error = (temp, temp);
+	}
+
+	if (error > m_TOL)
+		status = false;
+	
+	return status;
 }
 
 

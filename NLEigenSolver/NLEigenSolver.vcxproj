@@ -59,7 +59,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(SolutionDir)\NLEigenSolver\vendor\Blaze;$(SolutionDir)\NLEigenSolver\vendor\Eigen;$(SolutionDir)\NLEigenSolver\vendor\spdlog\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)\NLEigenSolver\vendor\CLAPACK\include;$(SolutionDir)\NLEigenSolver\vendor\Blaze;$(SolutionDir)\NLEigenSolver\vendor\Eigen;$(SolutionDir)\NLEigenSolver\vendor\spdlog\include</AdditionalIncludeDirectories>
       <PrecompiledHeaderFile>nlpch.h</PrecompiledHeaderFile>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
@@ -69,8 +69,8 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>BLASd.lib;LAPACKd.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(SolutionDir)\NLEigenSolver\vendor\blas;$(SolutionDir)\NLEigenSolver\vendor\lapack;</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libf2cd.lib;BLASd.lib;LAPACKd.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)\NLEigenSolver\vendor\CLAPACK\lib;</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -81,7 +81,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(SolutionDir)\NLEigenSolver\vendor\Blaze;$(SolutionDir)\NLEigenSolver\vendor\Eigen;$(SolutionDir)\NLEigenSolver\vendor\spdlog\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)\NLEigenSolver\vendor\CLAPACK\include;$(SolutionDir)\NLEigenSolver\vendor\Blaze;$(SolutionDir)\NLEigenSolver\vendor\Eigen;$(SolutionDir)\NLEigenSolver\vendor\spdlog\include</AdditionalIncludeDirectories>
       <PrecompiledHeaderFile>nlpch.h</PrecompiledHeaderFile>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <LanguageStandard>stdcpp17</LanguageStandard>
@@ -92,8 +92,8 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>BLAS.lib;LAPACK.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(SolutionDir)\NLEigenSolver\vendor\blas;$(SolutionDir)\NLEigenSolver\vendor\lapack;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libf2c.lib;BLAS.lib;LAPACK.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)\NLEigenSolver\vendor\CLAPACK\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
