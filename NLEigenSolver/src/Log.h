@@ -16,6 +16,7 @@ public:
 
 };
 
+
 //Core log macros
 #define LOG_ERROR(...)  Log::GetCoreLogger()->error(__VA_ARGS__)
 #define LOG_WARN(...)   Log::GetCoreLogger()->warn(__VA_ARGS__)

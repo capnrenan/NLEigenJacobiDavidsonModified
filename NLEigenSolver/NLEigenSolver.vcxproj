@@ -97,7 +97,9 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="src\NLEigenJacobiDavidson.cpp" />
+    <ClCompile Include="src\BlazeNLEigenSolver.cpp" />
+    <ClCompile Include="src\EigenNLEigenSolver.cpp" />
+    <ClCompile Include="src\NLEigenSolver.cpp" />
     <ClCompile Include="src\nlpch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
@@ -106,7 +108,9 @@
     <ClCompile Include="src\Main.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\NLEigenJacobiDavidson.h" />
+    <ClInclude Include="src\BlazeNLEigenSolver.h" />
+    <ClInclude Include="src\EigenNLEigenSolver.h" />
+    <ClInclude Include="src\NLEigenSolver.h" />
     <ClInclude Include="src\nlpch.h" />
     <ClInclude Include="src\Log.h" />
   </ItemGroup>
