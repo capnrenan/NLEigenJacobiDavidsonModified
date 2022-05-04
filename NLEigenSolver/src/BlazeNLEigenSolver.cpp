@@ -5,7 +5,7 @@ BlazeNLEigenSolver::BlazeNLEigenSolver(const std::string& filepath)
 	: m_Dimensions(0), m_NumberOfMassMtx(1), m_NumberOfEigenValues(0),
 	m_MaxIter(20), m_TOL(1e-14), m_FilePath(filepath)
 {
-	blaze::setNumThreads(8);
+	blaze::setNumThreads(10);
 }
 
 BlazeNLEigenSolver::~BlazeNLEigenSolver()
@@ -14,6 +14,7 @@ BlazeNLEigenSolver::~BlazeNLEigenSolver()
 
 bool BlazeNLEigenSolver::execute()
 {
+	PROFILE_FUNCTION();
 	//Reading data
 	LOG_INFO("Reading filedata...\n");
 	blaze::DynamicMatrix<double, blaze::rowMajor> K0;
@@ -125,8 +126,17 @@ bool BlazeNLEigenSolver::execute()
 			getFreqDependentMassMtx(MM, Mn, Omega[ie]);
 			//PtMP = Phi.col(ie).transpose() * Mn * Phi.col(ie);
 			//PtKP = Phi.col(ie).transpose() * Kn * Phi.col(ie);
-			PtMP = (blaze::column(Phi, ie), Mn * blaze::column(Phi, ie));
-			PtKP = (blaze::column(Phi, ie), Kn * blaze::column(Phi, ie));
+			#pragma omp sections
+			{
+				#pragma omp section
+				PtMP = (blaze::column(Phi, ie), Mn * blaze::column(Phi, ie));
+
+				#pragma omp section
+				PtKP = (blaze::column(Phi, ie), Kn * blaze::column(Phi, ie));
+			}
+
+			//PtMP = (blaze::column(Phi, ie), Mn * blaze::column(Phi, ie));
+			
 			theta = PtKP / PtMP;
 
 			LOG_ASSERT(!(PtMP < 0), "Error: Negative mass matrix!!!");
@@ -156,7 +166,7 @@ bool BlazeNLEigenSolver::execute()
 	}
 
 	//Print results
-	printResults(Omega, Phi);
+	//printResults(Omega, Phi);
 
 	return true;
 }
@@ -289,6 +299,7 @@ void BlazeNLEigenSolver::getFreqDependentMassMtx(const std::vector<blaze::Dynami
 
 void BlazeNLEigenSolver::getGeneralizedFreqDependentMassMtx(const std::vector<blaze::DynamicMatrix<double, blaze::rowMajor>>& MM, blaze::DynamicMatrix<double, blaze::rowMajor>& Mlrls, double lr, double ls)
 {
+	PROFILE_FUNCTION();
 	//Initialize
 	Mlrls = 0.0;
 	for (int jj = 0; jj < m_NumberOfMassMtx; jj++)
@@ -302,6 +313,7 @@ void BlazeNLEigenSolver::getGeneralizedFreqDependentMassMtx(const std::vector<bl
 
 void BlazeNLEigenSolver::getEffectiveStiffMtx(const blaze::DynamicMatrix<double, blaze::rowMajor>& K0, const std::vector<blaze::DynamicMatrix<double, blaze::rowMajor>>& MM, blaze::DynamicMatrix<double, blaze::rowMajor>& Keff, double omega)
 {
+	PROFILE_FUNCTION();
 	// Initialize
 	Keff = K0;
 
@@ -326,10 +338,9 @@ bool BlazeNLEigenSolver::iterativeLinearSolver(const blaze::DynamicMatrix<double
 {
 	//auto temp  = blaze::solve(A, b);
 	//x = temp;
-
+	PROFILE_FUNCTION();
 	double error;
 	bool status = true;
-	// #pragma omp parallel
 	{
 		blaze::solve(A, x, b);   // Computing the solution x
 		auto temp = A * x - b;

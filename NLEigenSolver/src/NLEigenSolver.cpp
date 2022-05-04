@@ -11,17 +11,17 @@ public:
 		None = 0, Eigen = 1, Blaze = 2
 	};
 
-	inline static API GetAPI() { return s_API; };
+	inline static API GetAPI() { return s_MathAPI; };
 
 private:
-	static API s_API;
+	static API s_MathAPI;
 };
 
-// Check if the math library API
+// Check the math library API
 #ifdef ENABLE_BLAZE
-	MathLibrary::API MathLibrary::s_API = MathLibrary::API::Blaze;
+	MathLibrary::API MathLibrary::s_MathAPI = MathLibrary::API::Blaze;
 #else
-	MathLibrary::API MathLibrary::s_API = MathLibrary::API::Eigen;
+	MathLibrary::API MathLibrary::s_MathAPI = MathLibrary::API::Eigen;
 #endif 
 
 

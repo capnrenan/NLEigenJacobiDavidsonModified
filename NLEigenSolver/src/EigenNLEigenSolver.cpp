@@ -142,7 +142,7 @@ bool EigenNLEigenSolver::execute()
 	}
 
 	//Print results
-	printResults(Omega, Phi);
+	//printResults(Omega, Phi);
 
 	return true;
 }
