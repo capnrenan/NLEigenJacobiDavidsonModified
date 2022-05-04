@@ -15,7 +15,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\NLEigenSolver.cpp">
+    <ClCompile Include="src\Main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\Log.cpp">
@@ -24,7 +24,13 @@
     <ClCompile Include="src\nlpch.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\NLEigenJacobiDavidson.cpp">
+    <ClCompile Include="src\NLEigenSolver.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\BlazeNLEigenSolver.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\EigenNLEigenSolver.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -35,7 +41,13 @@
     <ClInclude Include="src\nlpch.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\NLEigenJacobiDavidson.h">
+    <ClInclude Include="src\NLEigenSolver.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\BlazeNLEigenSolver.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\EigenNLEigenSolver.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
