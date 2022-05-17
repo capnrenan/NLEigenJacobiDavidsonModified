@@ -110,6 +110,7 @@
   <ItemGroup>
     <ClInclude Include="src\BlazeNLEigenSolver.h" />
     <ClInclude Include="src\EigenNLEigenSolver.h" />
+    <ClInclude Include="src\Instrumentor.h" />
     <ClInclude Include="src\NLEigenSolver.h" />
     <ClInclude Include="src\nlpch.h" />
     <ClInclude Include="src\Log.h" />

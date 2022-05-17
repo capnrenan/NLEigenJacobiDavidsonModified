@@ -1,12 +1,14 @@
 #include "nlpch.h"
 #include "EigenNLEigenSolver.h"
 
+
 EigenNLEigenSolver::EigenNLEigenSolver(const std::string& filepath)
 	: m_Dimensions(0), m_NumberOfMassMtx(1), m_NumberOfEigenValues(0),
 	m_MaxIter(20), m_TOL(1e-14), m_FilePath(filepath)
 {
 	Eigen::initParallel();
 }
+
 
 EigenNLEigenSolver::~EigenNLEigenSolver()
 {
@@ -23,7 +25,7 @@ bool EigenNLEigenSolver::execute()
 	LOG_INFO("Initializing the matrices...\n");
 	//Initialize the matrices and set them as zero
 	Eigen::VectorXd Omega(m_NumberOfEigenValues);
-	Eigen::VectorXd rk, dUk;
+	//Eigen::VectorXd rk, dUk;
 	Eigen::MatrixXd Phi(m_Dimensions, m_NumberOfEigenValues);
 	Eigen::MatrixXd B_r(m_Dimensions, m_NumberOfEigenValues);
 	Eigen::MatrixXd Keff(m_Dimensions, m_Dimensions);
@@ -79,6 +81,7 @@ bool EigenNLEigenSolver::execute()
 				B_r.col(is) = 1.0 / (normBr)*B_r.col(is);
 			}
 
+
 			// Orthogonalize phi_e with respect to the preceding eigenvector phi
 			if (ie > 0)
 			{
@@ -91,27 +94,47 @@ bool EigenNLEigenSolver::execute()
 			// Evaluate the effective stiffness matrix
 			getEffectiveStiffMtx(K0, MM, Keff, Omega(ie));
 
-			// Evaluate the residual error
-			rk = -Keff * Phi.col(ie);
+			//// Evaluate the residual error
+			//rk = -Keff * Phi.col(ie);
 
-			// Project the effective stiffness matrix
-			projectEffectiveStiffMatrix(Keff, B_r, ie);
+			//// Project the effective stiffness matrix
+			//projectEffectiveStiffMatrix(Keff, B_r, ie);
 
-			// solve dUk
-			iterativeLinearSolver(Keff, rk, dUk);
+			//// solve dUk
+			//iterativeLinearSolver(Keff, rk, dUk);
 
-			//Project dUk
-			for (int is = 0; is < ie + 1; is++)
-			{
-				dUk += -B_r.col(is) * (B_r.col(is).transpose() * dUk);
-			}
+			////Project dUk
+			//for (int is = 0; is < ie + 1; is++)
+			//{
+			//	dUk += -B_r.col(is) * (B_r.col(is).transpose() * dUk);
+			//}
 
-			// Update solution
-			Phi.col(ie) += dUk;
+			//// Update solution
+			//Phi.col(ie) += dUk;
 
 			// Evaluate the Rayleigh quotient
-			getFreqDependentStiffMtx(K0, MM, Kn, Omega(ie));
+			//getFreqDependentStiffMtx(K0, MM, Kn, Omega(ie));
+			//getFreqDependentMassMtx(MM, Mn, Omega(ie));
+
+			// Update eigenvector solution
+			std::thread thread0(&EigenNLEigenSolver::UpdateEigenvectorSolution, this, std::ref(Keff), std::ref(Phi),
+				std::ref(B_r), ie);
+
+			// Compute the frequency-dependent stiffness matrix
+			std::thread thread1(&EigenNLEigenSolver::getFreqDependentStiffMtx, this, std::ref(K0), std::ref(MM),
+				std::ref(Kn), std::ref(Omega(ie)));
+
+			// Compute the frequency-dependent mass matrix
+			std::thread thread2(&EigenNLEigenSolver::getFreqDependentMassMtx, this, std::ref(MM), std::ref(Mn), std::ref(Omega(ie)));
+			thread0.join();
+			thread1.join();
+			thread2.join();
+
+			/*auto function = getFreqDependentStiffMtx;
+			std::thread worker(function,this,K0, MM, Kn, Omega(ie));
 			getFreqDependentMassMtx(MM, Mn, Omega(ie));
+			worker.join();*/
+
 			PtMP = Phi.col(ie).transpose() * Mn * Phi.col(ie);
 			PtKP = Phi.col(ie).transpose() * Kn * Phi.col(ie);
 			theta = PtKP / PtMP;
@@ -144,6 +167,7 @@ bool EigenNLEigenSolver::execute()
 	//Print results
 	printResults(Omega, Phi);
 
+	LOG_INFO("NLEigenvalue routine has run sucessfully!");
 	return true;
 }
 
@@ -213,7 +237,6 @@ void EigenNLEigenSolver::printResults(Eigen::VectorXd& Omega, Eigen::MatrixXd& P
 		directory = m_FilePath.substr(0, last_slash_idx);
 	}
 
-
 	resultFile1 = directory + "\\Phi.dat";
 	resultFile2 = directory + "\\Omega.dat";
 
@@ -235,6 +258,29 @@ void EigenNLEigenSolver::printResults(Eigen::VectorXd& Omega, Eigen::MatrixXd& P
 	//out2 << m_NumberOfEigenValues << std::endl;
 	out2 << std::setprecision(16) << std::scientific << Omega;
 	out2.close();
+}
+
+void EigenNLEigenSolver::UpdateEigenvectorSolution(Eigen::MatrixXd& Keff, Eigen::MatrixXd& Phi, Eigen::MatrixXd& B_r, int index)
+{
+	Eigen::VectorXd rk, dUk;
+
+	// Evaluate the residual error
+	rk = -Keff * Phi.col(index);
+
+	// Project the effective stiffness matrix
+	projectEffectiveStiffMatrix(Keff, B_r, index);
+
+	// solve dUk
+	iterativeLinearSolver(Keff, rk, dUk);
+
+	//Project dUk
+	for (int is = 0; is < index + 1; is++)
+	{
+		dUk += -B_r.col(is) * (B_r.col(is).transpose() * dUk);
+	}
+
+	// Update solution
+	Phi.col(index) += dUk;
 }
 
 void EigenNLEigenSolver::getFreqDependentStiffMtx(const Eigen::MatrixXd& K0, const std::vector<Eigen::MatrixXd>& MM, Eigen::MatrixXd& Kn, double omega)

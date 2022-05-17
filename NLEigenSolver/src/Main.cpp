@@ -4,14 +4,14 @@
 // Entry Point
 int main(int argc, char* argv[])
 {
-	//NLEigenJacobiDavidson* app = new NLEigenJacobiDavidson(argv[1]);
-	//std::shared_ptr<NLEigenSolver> app = NLEigenSolver::Create("examples/K.txt");
-	auto app = NLEigenSolver::Create(argv[1]);
+	PROFILE_BEGIN_SESSION("Eigenvalue");
+	std::shared_ptr<NLEigenSolver> app = NLEigenSolver::Create(argv[1]);
 	bool status = app->execute();
+	PROFILE_END_SESSION();
 
-	if (status)
-		return 0;
-	else
+	// Check status
+	if (!status)
 		return 1;
 
+	return 0;
 }
