@@ -122,18 +122,27 @@ bool BlazeNLEigenSolver::execute()
 			blaze::column(Phi, ie) += dUk;
 
 			// Evaluate the Rayleigh quotient
-			getFreqDependentStiffMtx(K0, MM, Kn, Omega[ie]);
-			getFreqDependentMassMtx(MM, Mn, Omega[ie]);
+			//getFreqDependentStiffMtx(K0, MM, Kn, Omega[ie]);
+			//getFreqDependentMassMtx(MM, Mn, Omega[ie]);
+
+			std::thread thread(&BlazeNLEigenSolver::getFreqDependentStiffMtx, this, std::ref(K0), std::ref(MM),
+				std::ref(Kn), std::ref(Omega[ie]));
+			std::thread thread2(&BlazeNLEigenSolver::getFreqDependentMassMtx, this, std::ref(MM), std::ref(Mn), std::ref(Omega[ie]));
+			thread.join();
+			thread2.join();
+
 			//PtMP = Phi.col(ie).transpose() * Mn * Phi.col(ie);
 			//PtKP = Phi.col(ie).transpose() * Kn * Phi.col(ie);
-			#pragma omp sections
+			PtMP = (blaze::column(Phi, ie), Mn * blaze::column(Phi, ie));
+			PtKP = (blaze::column(Phi, ie), Kn * blaze::column(Phi, ie));
+			/*#pragma omp sections
 			{
 				#pragma omp section
 				PtMP = (blaze::column(Phi, ie), Mn * blaze::column(Phi, ie));
 
 				#pragma omp section
 				PtKP = (blaze::column(Phi, ie), Kn * blaze::column(Phi, ie));
-			}
+			}*/
 
 			//PtMP = (blaze::column(Phi, ie), Mn * blaze::column(Phi, ie));
 			

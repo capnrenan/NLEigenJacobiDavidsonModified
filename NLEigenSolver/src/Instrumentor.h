@@ -1,5 +1,7 @@
 #pragma once
 // Generate profiling (.json) to visualization via chrome://tracing/
+// Based on the Cherno channel. 
+
 #include <string>
 #include <chrono>
 #include <algorithm>
