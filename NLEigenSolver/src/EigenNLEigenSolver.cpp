@@ -20,11 +20,12 @@ bool EigenNLEigenSolver::execute()
 	LOG_INFO("Reading filedata...\n");
 	Eigen::MatrixXd K0;
 	std::vector<Eigen::MatrixXd> MM;
-	readFileAndGetStiffMassMatrices(K0, MM);
+	Eigen::VectorXd Omega;
+	readFileAndGetStiffMassMatrices(K0, MM, Omega);
 
 	LOG_INFO("Initializing the matrices...\n");
 	//Initialize the matrices and set them as zero
-	Eigen::VectorXd Omega(m_NumberOfEigenValues);
+	
 	//Eigen::VectorXd rk, dUk;
 	Eigen::MatrixXd Phi(m_Dimensions, m_NumberOfEigenValues);
 	Eigen::MatrixXd B_r(m_Dimensions, m_NumberOfEigenValues);
@@ -36,7 +37,7 @@ bool EigenNLEigenSolver::execute()
 	LOG_INFO("Solving with TOL = {0}\n", m_TOL);
 
 	//Set as zero
-	Omega.setZero();   B_r.setZero(); Phi.setOnes();
+	B_r.setZero(); Phi.setOnes();
 	Keff.setZero(); Kn.setZero(); Mn.setZero(); Mlrls.setZero();
 
 	//Auxiliary variables
@@ -53,9 +54,12 @@ bool EigenNLEigenSolver::execute()
 
 		LOG_INFO("---------------------------------\nEigenvalue #{0}:", ie);
 
-		if (ie > 0)
+		if (!m_hasInitialTrial)
 		{
-			Omega(ie) = Omega(ie - 1);
+			if (ie > 0)
+			{
+				Omega(ie) = Omega(ie - 1);
+			}
 		}
 
 		while (abs(conv) > m_TOL)
@@ -63,7 +67,7 @@ bool EigenNLEigenSolver::execute()
 			// Orthogonalized phi_r with respect to phi_s
 			for (int is = 0; is < ie + 1; is++)
 			{
-				// Get the generalized freq-dependent mass matrix
+				// Get the generalized frequency-dependent mass matrix
 				getGeneralizedFreqDependentMassMtx(MM, Mlrls, Omega(ie), Omega(is));
 				B_r.col(ie) = Mlrls * Phi.col(is);
 
@@ -72,7 +76,8 @@ bool EigenNLEigenSolver::execute()
 					for (int el = 0; el < is; el++)
 					{
 						//Project b_s = b_s - b_el*(b_el.t()*b_s)
-						B_r.col(is) += -B_r.col(el) * (B_r.col(el).transpose() * B_r.col(is));
+						double temp = (B_r.col(el).transpose() * B_r.col(is));
+						B_r.col(is) += -B_r.col(el) * temp;
 					}
 				}
 
@@ -130,16 +135,11 @@ bool EigenNLEigenSolver::execute()
 			thread1.join();
 			thread2.join();
 
-			/*auto function = getFreqDependentStiffMtx;
-			std::thread worker(function,this,K0, MM, Kn, Omega(ie));
-			getFreqDependentMassMtx(MM, Mn, Omega(ie));
-			worker.join();*/
-
 			PtMP = Phi.col(ie).transpose() * Mn * Phi.col(ie);
 			PtKP = Phi.col(ie).transpose() * Kn * Phi.col(ie);
 			theta = PtKP / PtMP;
 
-			LOG_ASSERT(!(PtMP < 0), "Error: Negative mass matrix!!!");
+			//LOG_ASSERT(!(PtMP < 0), "Error: Negative mass matrix!!!");
 
 			// Normalize the improved eigenvector
 			Phi.col(ie) = (1.0 / sqrt(PtMP)) * Phi.col(ie);
@@ -171,7 +171,7 @@ bool EigenNLEigenSolver::execute()
 	return true;
 }
 
-void EigenNLEigenSolver::readFileAndGetStiffMassMatrices(Eigen::MatrixXd& K0, std::vector<Eigen::MatrixXd>& MM)
+void EigenNLEigenSolver::readFileAndGetStiffMassMatrices(Eigen::MatrixXd& K0, std::vector<Eigen::MatrixXd>& MM, Eigen::VectorXd& Omega)
 {
 	//Open file to read
 	std::fstream fid;
@@ -185,15 +185,22 @@ void EigenNLEigenSolver::readFileAndGetStiffMassMatrices(Eigen::MatrixXd& K0, st
 
 	if (fid.is_open())
 	{
-		std::string line;
+		std::string line; 
 		std::getline(fid, line);
 		// Read #dof, #mass matrices, #eigenvalues
-		fid >> m_Dimensions >> m_NumberOfMassMtx >> m_NumberOfEigenValues >> m_TOL;
+		int hasEigenTrial;
+		fid >> m_Dimensions >> m_NumberOfMassMtx >> m_NumberOfEigenValues >> m_TOL >> hasEigenTrial;
 
+		if (hasEigenTrial == 1)
+		{
+			m_hasInitialTrial = true;
+		}
+			
 		// Set the matrices
 		K0 = Eigen::MatrixXd(m_Dimensions, m_Dimensions);
 		Eigen::MatrixXd Mtemp(m_Dimensions, m_Dimensions);
-		K0.setZero(); Mtemp.setZero();
+		Omega = Eigen::VectorXd(m_NumberOfEigenValues);
+		K0.setZero(); Mtemp.setZero(); Omega.setZero();
 		MM.reserve(m_NumberOfMassMtx);
 
 		// Read the stiffness matrix K0
@@ -218,6 +225,18 @@ void EigenNLEigenSolver::readFileAndGetStiffMassMatrices(Eigen::MatrixXd& K0, st
 
 			MM.emplace_back(-Mtemp);
 		}
+
+		// Check 
+		if (m_hasInitialTrial)
+		{
+			LOG_INFO("A first attemptive of the eigenvalues has been provided!");
+			for (int ie = 0; ie < m_NumberOfEigenValues; ie++)
+			{
+				fid >> Omega(ie);
+			}
+		}
+			
+
 	}
 
 	//Close file

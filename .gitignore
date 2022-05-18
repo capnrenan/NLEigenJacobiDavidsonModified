@@ -7,3 +7,4 @@ bin-intermediates/
 *.user
 *.dat
 *.txt
+*.json

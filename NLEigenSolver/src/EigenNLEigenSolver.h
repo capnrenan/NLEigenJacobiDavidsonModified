@@ -13,7 +13,7 @@ public:
 	virtual bool execute() override;
 
 private:
-	void readFileAndGetStiffMassMatrices(Eigen::MatrixXd& K0, std::vector<Eigen::MatrixXd>& MM);
+	void readFileAndGetStiffMassMatrices(Eigen::MatrixXd& K0, std::vector<Eigen::MatrixXd>& MM, Eigen::VectorXd& Omega);
 	void printResults(Eigen::VectorXd& Omega, Eigen::MatrixXd& Phi) const;
 	void getFreqDependentStiffMtx(const Eigen::MatrixXd& K0, const std::vector<Eigen::MatrixXd>& MM, Eigen::MatrixXd& Kn, double omega);  // Kn(lr)
 	void getFreqDependentMassMtx(const std::vector<Eigen::MatrixXd>& MM, Eigen::MatrixXd& Mn, double omega);                               // Mn(lr)
@@ -23,11 +23,12 @@ private:
 	bool iterativeLinearSolver(const Eigen::MatrixXd& A, const Eigen::VectorXd& b, Eigen::VectorXd& x);
 	void UpdateEigenvectorSolution(Eigen::MatrixXd& Keff, Eigen::MatrixXd& Phi, Eigen::MatrixXd& B_r, int index);
 
-public:
+private:
 	int m_Dimensions;
 	int m_NumberOfMassMtx;
 	int m_NumberOfEigenValues;
 	int m_MaxIter;
 	double m_TOL;
 	std::string m_FilePath;
+	bool m_hasInitialTrial = false;
 };
