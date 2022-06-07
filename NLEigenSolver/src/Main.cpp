@@ -4,7 +4,7 @@
 // Entry Point
 int main(int argc, char* argv[])
 {
-	PROFILE_BEGIN_SESSION("Eigenvalue");
+	PROFILE_BEGIN_SESSION("Eigenvalue routine");
 	std::shared_ptr<NLEigenSolver> app = NLEigenSolver::Create(argv[1]);
 	bool status = app->execute();
 	PROFILE_END_SESSION();
