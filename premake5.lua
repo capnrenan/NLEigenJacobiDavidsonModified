@@ -14,10 +14,6 @@ outputdir = "%{cfg.buildcfg}-%{cfg.system}-%{cfg.architecture}"
 
 -- Include directories relative to root folder (sol. directory)
 IncludeDir = {}
---IncludeDir["Eigen"] = projectName .. "/vendor/Eigen"
---IncludeDir["Blaze"] = projectName .. "/vendor/Blaze"
---IncludeDir["CLAPACK"] = projectName .. "/vendor/CLAPACK/include"
---IncludeDir["spdlog"] = projectName .. "/vendor/spdlog/include"
 
 project "NLEigenSolver"
 	location "NLEigenSolver"
@@ -63,19 +59,18 @@ project "NLEigenSolver"
 
 	-- Filter: Configurations only applied to specific platforms
 	filter "system:windows"
-		cppdialect "C++17"
 		systemversion "latest"
 		
 	filter "configurations:Debug"
-      defines { "DEBUG" }
-	  runtime "Debug"
-      symbols "On"
-	  links { "libf2cd.lib","blasd.lib","lapackd.lib"}
+		defines { "_DEBUG" }
+		runtime "Debug"
+		symbols "On"
+		links { "libf2cd.lib","blasd.lib","lapackd.lib"}
 	  
 	filter "configurations:Release"
-      defines { "RELEASE" }
-	  runtime "Release"
-	  optimize "On"
-      symbols "On"
-	  links { "libf2c.lib","blas.lib","lapack.lib"}	  
+		defines { "_RELEASE" }
+		runtime "Release"
+		optimize "On"
+		symbols "On"
+		links { "libf2c.lib","blas.lib","lapack.lib"}	  
 
