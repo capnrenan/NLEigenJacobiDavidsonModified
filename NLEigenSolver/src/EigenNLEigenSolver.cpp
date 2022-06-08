@@ -49,7 +49,7 @@ bool EigenNLEigenSolver::execute()
 	B_r.setZero(); Phi.setOnes();
 	Keff.setZero(); Kn.setZero(); Mn.setZero(); Mlrls.setZero();
 
-	//Auxiliary variables
+	//Auxiliary variablesbbbbba
 	data_type conv, normBr, PtMP, PtKP, theta;
 	int iterK;
 

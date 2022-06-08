@@ -1,7 +1,7 @@
 # Directories
 .vs/
 bin/
-bin-intermediates/
+bin-int/
 
 # Files
 *.user
