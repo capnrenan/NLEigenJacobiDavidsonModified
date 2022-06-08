@@ -1,13 +1,21 @@
 #include "nlpch.h"
 #include "EigenNLEigenSolver.h"
 
-
 EigenNLEigenSolver::EigenNLEigenSolver(const std::string& filepath)
 	: m_Dimensions(0), m_NumberOfMassMtx(1), m_NumberOfEigenValues(0),
-	m_MaxIter(20), m_TOL(1e-14), m_FilePath(filepath)
+	m_MaxIter(200), m_TOL(1e-14), m_FilePath(filepath)
 {
 	Eigen::initParallel();
+
+#if QUAD_PRECISION
+	LOG_WARN("Quad precision is enabled!");
+#else
+	LOG_WARN("Quad precision is unabled!");
+#endif
+
+
 }
+
 
 
 EigenNLEigenSolver::~EigenNLEigenSolver()
@@ -18,29 +26,31 @@ bool EigenNLEigenSolver::execute()
 {
 	//Reading data
 	LOG_INFO("Reading filedata...\n");
-	Eigen::MatrixXd K0;
-	std::vector<Eigen::MatrixXd> MM;
-	readFileAndGetStiffMassMatrices(K0, MM);
+	
+	EigenMatrix K0;
+	std::vector<EigenMatrix> MM;
+	EigenVector Omega;
+	readFileAndGetStiffMassMatrices(K0, MM, Omega);
 
 	LOG_INFO("Initializing the matrices...\n");
 	//Initialize the matrices and set them as zero
-	Eigen::VectorXd Omega(m_NumberOfEigenValues);
-	//Eigen::VectorXd rk, dUk;
-	Eigen::MatrixXd Phi(m_Dimensions, m_NumberOfEigenValues);
-	Eigen::MatrixXd B_r(m_Dimensions, m_NumberOfEigenValues);
-	Eigen::MatrixXd Keff(m_Dimensions, m_Dimensions);
-	Eigen::MatrixXd Kn(m_Dimensions, m_Dimensions);
-	Eigen::MatrixXd Mn(m_Dimensions, m_Dimensions);
-	Eigen::MatrixXd Mlrls(m_Dimensions, m_Dimensions);
+	
+	//EigenVector rk, dUk;
+	EigenMatrix Phi(m_Dimensions, m_NumberOfEigenValues);
+	EigenMatrix B_r(m_Dimensions, m_NumberOfEigenValues);
+	EigenMatrix Keff(m_Dimensions, m_Dimensions);
+	EigenMatrix Kn(m_Dimensions, m_Dimensions);
+	EigenMatrix Mn(m_Dimensions, m_Dimensions);
+	EigenMatrix Mlrls(m_Dimensions, m_Dimensions);
 
 	LOG_INFO("Solving with TOL = {0}\n", m_TOL);
 
 	//Set as zero
-	Omega.setZero();   B_r.setZero(); Phi.setOnes();
+	B_r.setZero(); Phi.setOnes();
 	Keff.setZero(); Kn.setZero(); Mn.setZero(); Mlrls.setZero();
 
-	//Auxiliary variables
-	double conv, normBr, PtMP, PtKP, theta;
+	//Auxiliary variablesbbbbba
+	data_type conv, normBr, PtMP, PtKP, theta;
 	int iterK;
 
 	LOG_INFO("Processing...");
@@ -53,9 +63,12 @@ bool EigenNLEigenSolver::execute()
 
 		LOG_INFO("---------------------------------\nEigenvalue #{0}:", ie);
 
-		if (ie > 0)
+		if (!m_hasInitialTrial)
 		{
-			Omega(ie) = Omega(ie - 1);
+			if (ie > 0)
+			{
+				Omega(ie) = Omega(ie - 1);
+			}
 		}
 
 		while (abs(conv) > m_TOL)
@@ -63,7 +76,7 @@ bool EigenNLEigenSolver::execute()
 			// Orthogonalized phi_r with respect to phi_s
 			for (int is = 0; is < ie + 1; is++)
 			{
-				// Get the generalized freq-dependent mass matrix
+				// Get the generalized frequency-dependent mass matrix
 				getGeneralizedFreqDependentMassMtx(MM, Mlrls, Omega(ie), Omega(is));
 				B_r.col(ie) = Mlrls * Phi.col(is);
 
@@ -72,7 +85,8 @@ bool EigenNLEigenSolver::execute()
 					for (int el = 0; el < is; el++)
 					{
 						//Project b_s = b_s - b_el*(b_el.t()*b_s)
-						B_r.col(is) += -B_r.col(el) * (B_r.col(el).transpose() * B_r.col(is));
+						data_type temp = (B_r.col(el).transpose() * B_r.col(is));
+						B_r.col(is) += -B_r.col(el) * temp;
 					}
 				}
 
@@ -93,7 +107,6 @@ bool EigenNLEigenSolver::execute()
 
 			// Evaluate the effective stiffness matrix
 			getEffectiveStiffMtx(K0, MM, Keff, Omega(ie));
-
 			//// Evaluate the residual error
 			//rk = -Keff * Phi.col(ie);
 
@@ -130,24 +143,20 @@ bool EigenNLEigenSolver::execute()
 			thread1.join();
 			thread2.join();
 
-			/*auto function = getFreqDependentStiffMtx;
-			std::thread worker(function,this,K0, MM, Kn, Omega(ie));
-			getFreqDependentMassMtx(MM, Mn, Omega(ie));
-			worker.join();*/
-
 			PtMP = Phi.col(ie).transpose() * Mn * Phi.col(ie);
 			PtKP = Phi.col(ie).transpose() * Kn * Phi.col(ie);
 			theta = PtKP / PtMP;
 
-			LOG_ASSERT(!(PtMP < 0), "Error: Negative mass matrix!!!");
+			//LOG_ASSERT(!(PtMP < 0), "Error: Negative mass matrix!!!");
 
 			// Normalize the improved eigenvector
 			Phi.col(ie) = (1.0 / sqrt(PtMP)) * Phi.col(ie);
 
 			// Evaluate the convergence
-			conv = abs(theta - Omega(ie)) / theta;
+			conv = (theta - Omega(ie)) / theta;
+			LOG_ASSERT(!isnan(conv), "Error: Not-a-number in the computed eigenvalues!");
 
-			LOG_INFO("iter: {0}    rel.error: {1}", iterK, conv);
+			LOG_INFO("iter: {0}    rel.error: {1}", iterK, std::abs(conv));
 
 			//Update the new eigenvalue
 			Omega(ie) = theta;
@@ -171,7 +180,7 @@ bool EigenNLEigenSolver::execute()
 	return true;
 }
 
-void EigenNLEigenSolver::readFileAndGetStiffMassMatrices(Eigen::MatrixXd& K0, std::vector<Eigen::MatrixXd>& MM)
+void EigenNLEigenSolver::readFileAndGetStiffMassMatrices(EigenMatrix& K0, std::vector<EigenMatrix>& MM, EigenVector& Omega)
 {
 	//Open file to read
 	std::fstream fid;
@@ -185,15 +194,22 @@ void EigenNLEigenSolver::readFileAndGetStiffMassMatrices(Eigen::MatrixXd& K0, st
 
 	if (fid.is_open())
 	{
-		std::string line;
+		std::string line; 
 		std::getline(fid, line);
 		// Read #dof, #mass matrices, #eigenvalues
-		fid >> m_Dimensions >> m_NumberOfMassMtx >> m_NumberOfEigenValues >> m_TOL;
+		int hasEigenTrial;
+		fid >> m_Dimensions >> m_NumberOfMassMtx >> m_NumberOfEigenValues >> m_TOL >> hasEigenTrial;
 
+		if (hasEigenTrial == 1)
+		{
+			m_hasInitialTrial = true;
+		}
+			
 		// Set the matrices
-		K0 = Eigen::MatrixXd(m_Dimensions, m_Dimensions);
-		Eigen::MatrixXd Mtemp(m_Dimensions, m_Dimensions);
-		K0.setZero(); Mtemp.setZero();
+		K0 = EigenMatrix(m_Dimensions, m_Dimensions);
+		EigenMatrix Mtemp(m_Dimensions, m_Dimensions);
+		Omega = EigenVector(m_NumberOfEigenValues);
+		K0.setZero(); Mtemp.setZero(); Omega.setZero();
 		MM.reserve(m_NumberOfMassMtx);
 
 		// Read the stiffness matrix K0
@@ -218,13 +234,25 @@ void EigenNLEigenSolver::readFileAndGetStiffMassMatrices(Eigen::MatrixXd& K0, st
 
 			MM.emplace_back(-Mtemp);
 		}
+
+		// Check 
+		if (m_hasInitialTrial)
+		{
+			LOG_INFO("A first attemptive of the eigenvalues has been provided!");
+			for (int ie = 0; ie < m_NumberOfEigenValues; ie++)
+			{
+				fid >> Omega(ie);
+			}
+		}
+			
+
 	}
 
 	//Close file
 	fid.close();
 }
 
-void EigenNLEigenSolver::printResults(Eigen::VectorXd& Omega, Eigen::MatrixXd& Phi) const
+void EigenNLEigenSolver::printResults(EigenVector& Omega, EigenMatrix& Phi) const
 {
 	// Save the eigenproblem results
 	LOG_INFO("Save the eigenvalues and eigenvector!");
@@ -260,12 +288,13 @@ void EigenNLEigenSolver::printResults(Eigen::VectorXd& Omega, Eigen::MatrixXd& P
 	out2.close();
 }
 
-void EigenNLEigenSolver::UpdateEigenvectorSolution(Eigen::MatrixXd& Keff, Eigen::MatrixXd& Phi, Eigen::MatrixXd& B_r, int index)
+void EigenNLEigenSolver::UpdateEigenvectorSolution(EigenMatrix& Keff, EigenMatrix& Phi, EigenMatrix& B_r, int index)
 {
-	Eigen::VectorXd rk, dUk;
-
+	EigenVector rk, dUk(m_Dimensions);
+	
 	// Evaluate the residual error
 	rk = -Keff * Phi.col(index);
+	dUk.setOnes();
 
 	// Project the effective stiffness matrix
 	projectEffectiveStiffMatrix(Keff, B_r, index);
@@ -283,7 +312,7 @@ void EigenNLEigenSolver::UpdateEigenvectorSolution(Eigen::MatrixXd& Keff, Eigen:
 	Phi.col(index) += dUk;
 }
 
-void EigenNLEigenSolver::getFreqDependentStiffMtx(const Eigen::MatrixXd& K0, const std::vector<Eigen::MatrixXd>& MM, Eigen::MatrixXd& Kn, double omega)
+void EigenNLEigenSolver::getFreqDependentStiffMtx(const EigenMatrix& K0, const std::vector<EigenMatrix>& MM, EigenMatrix& Kn, data_type omega)
 {
 	//Initialize
 	Kn = K0;
@@ -295,7 +324,7 @@ void EigenNLEigenSolver::getFreqDependentStiffMtx(const Eigen::MatrixXd& K0, con
 	}
 }
 
-void EigenNLEigenSolver::getFreqDependentMassMtx(const std::vector<Eigen::MatrixXd>& MM, Eigen::MatrixXd& Mn, double omega)
+void EigenNLEigenSolver::getFreqDependentMassMtx(const std::vector<EigenMatrix>& MM, EigenMatrix& Mn, data_type omega)
 {
 	//Initialize
 	Mn = MM[0];
@@ -303,11 +332,11 @@ void EigenNLEigenSolver::getFreqDependentMassMtx(const std::vector<Eigen::Matrix
 	for (int jj = 1; jj < m_NumberOfMassMtx; jj++)
 	{
 
-		Mn += (jj + 1.0) * pow(omega, jj) * MM[jj];
+		Mn += (jj + 1.0) * std::pow(omega, jj) * MM[jj];
 	}
 }
 
-void EigenNLEigenSolver::getGeneralizedFreqDependentMassMtx(const std::vector<Eigen::MatrixXd>& MM, Eigen::MatrixXd& Mlrls, double lr, double ls)
+void EigenNLEigenSolver::getGeneralizedFreqDependentMassMtx(const std::vector<EigenMatrix>& MM, EigenMatrix& Mlrls, data_type lr, data_type ls)
 {
 	//Initialize
 	Mlrls.setZero();
@@ -321,18 +350,18 @@ void EigenNLEigenSolver::getGeneralizedFreqDependentMassMtx(const std::vector<Ei
 	}
 }
 
-void EigenNLEigenSolver::getEffectiveStiffMtx(const Eigen::MatrixXd& K0, const std::vector<Eigen::MatrixXd>& MM, Eigen::MatrixXd& Keff, double omega)
+void EigenNLEigenSolver::getEffectiveStiffMtx(const EigenMatrix& K0, const std::vector<EigenMatrix>& MM, EigenMatrix& Keff, data_type omega)
 {
 	// Initialize
 	Keff = K0;
 
 	for (int jj = 0; jj < m_NumberOfMassMtx; jj++)
 	{
-		Keff -= pow(omega, jj + 1.0) * MM[jj];
+		Keff -= std::pow(omega, jj + 1.0) * MM[jj];
 	}
 }
 
-void EigenNLEigenSolver::projectEffectiveStiffMatrix(Eigen::MatrixXd& Keff, Eigen::MatrixXd& B_s, int indexEig)
+void EigenNLEigenSolver::projectEffectiveStiffMatrix(EigenMatrix& Keff, EigenMatrix& B_s, int indexEig)
 {
 	// Project the effective stiffness matrix onto the subspace
 	// orthogonal to all preceding eigenvectors and add the orthogonal
@@ -343,38 +372,80 @@ void EigenNLEigenSolver::projectEffectiveStiffMatrix(Eigen::MatrixXd& Keff, Eige
 	}
 }
 
-bool EigenNLEigenSolver::iterativeLinearSolver(const Eigen::MatrixXd& A, const Eigen::VectorXd& b, Eigen::VectorXd& x)
+bool EigenNLEigenSolver::iterativeLinearSolver(const EigenMatrix& A, const EigenVector& b, EigenVector& x)
 {
-	// Set the iterative linear solver (Conjugate Gradients)
-	// The number of max. of iterations
-	//Eigen::ConjugateGradient<Eigen::MatrixXd, Eigen::Lower> linsolver;
-	//Eigen::ConjugateGradient<Eigen::SparseMatrix<double>, Eigen::Upper> linsolver;
-	//Eigen::BiCGSTAB<Eigen::MatrixXd> linsolver;
-	//linsolver.setTolerance(1.0e-14);
-	//linsolver.setMaxIterations(4 * m_Dimensions);
+	// Implementation of the non-preconditioned BICGSTAB algorithm
+	//EigenVector r(m_Dimensions), r_hat(m_Dimensions);
+	//auto bmod = A.transpose() * b;
+	//auto Amod = A.transpose() * A;
+	//r = bmod - Amod*x;
+	//r_hat = r;
+	//EigenVector v(m_Dimensions), p(m_Dimensions), t(m_Dimensions), s(m_Dimensions), h(m_Dimensions);
+	//v.setZero(); p.setZero(); t.setZero(); s.setZero(); h.setZero();
+	//double rho = 1.0, alpha = 1.0, omega = 1.0, beta, tol = 1e-10;
+	//double error, bnorm2 = bmod.norm();
+	//int icount, max_iter = 2000;
+	bool status = true;
 
-	//Solve
-	//x = linsolver.compute(A.transpose()*A).solve(A.transpose()*b);
+	//for (int i = 0; i < max_iter; i++)
+	//{
+	//	beta = 1.0 / rho * (alpha / omega);
+	//	rho = r_hat.transpose() * r;
+	//	beta *= beta;
 
+	//	p = r + beta * (p - omega * v);
+	//	v = Amod * p;
+	//	alpha = rho / (r_hat.transpose()*v);
+	//	h = x + alpha * p;
+
+	//	s = r - alpha * v;
+	//	t = Amod * s;
+	//	omega = (t.transpose() * s);
+	//	omega *= 1.0 / (t.transpose() * t);
+	//	
+	//	// Update solution
+	//	x = h + omega * s;
+
+	//	// Check solution
+	//	error = (bmod - Amod * x).norm();
+	//	error *= 1.0 / bnorm2;
+	//	if (error < tol)
+	//	{
+	//		icount = i;
+	//		break;
+	//	}
+
+	//	r = s - omega * t;
+	//}
+
+	//if (error > tol)
+	//{
+	//	status = false;
+	//	icount = max_iter;
+	//	
+	//}
 	// Direct solve
+	//auto bmod = A.transpose() * b;
+	//auto Amod = A.transpose() * A;
+	//x = Amod.fullPivLu().solve(bmod);
+	//
+	// 
+	//data_type bnorm2 = bmod.norm();
+	//data_type error = (bmod - Amod * x).norm() / (bnorm2);
+	
 	x = A.fullPivLu().solve(b);
-	//Eigen::LLT<Eigen::MatrixXd> llt;
-
-	//llt.compute(A);
-	//x = llt.solve(b);
-	//x = (A.adjoint() * A).llt().solve((A.adjoint() * b));
-	//x = A.bdcSvd(Eigen::ComputeThinU | Eigen::ComputeThinV).solve(b);
-
+	data_type bnorm2 = b.norm();
+	data_type error = (b - A * x).norm() / (bnorm2);
 
 	// Check the L2 norm
-	double relative_error1 = (A * x - b).norm() / b.norm();
-
+	//auto res = (A * x - b);
+	//data_type relative_error1 = (A * x - b).norm();
 	//LOG_WARN("Relative error(L2 norm) BDCSVD = {0}", relative_error1);
-	//LOG_WARN("Relative error(L2 norm) fullPivLu = {0}", relative_error1);
+	//LOG_WARN("Error(L2 norm) = {0}", error);
 
 	//LOG_INFO("#Iterations: {0},    Estimated error: {1}", linsolver.iterations(), linsolver.error());
 
-	bool status = true;
+	
 
 	/*if (linsolver.error() > 1.0e-14)
 	{

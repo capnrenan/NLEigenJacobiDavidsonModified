@@ -1,9 +1,10 @@
 # Directories
 .vs/
 bin/
-bin-intermediates/
+bin-int/
 
 # Files
 *.user
 *.dat
 *.txt
+*.json
