@@ -7,7 +7,7 @@ It is used the C++ linear algebra library, [Eigen](https://gitlab.com/libeigen/e
 The nonlinear eingesolver based on the modified Jacobi-Davidson method can be added in your repository by the following command:
 
 ```sh
-git clone --recursive https://github.com/capnrenan/NLEigenJacobiDavidsonModified
+git clone --recursive https://github.com/renancsales/NLEigenJacobiDavidsonModified
 ```
 
 # References
