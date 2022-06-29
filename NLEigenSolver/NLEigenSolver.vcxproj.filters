@@ -1,57 +1,93 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <Filter Include="Source Files">
-      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
-      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    <Filter Include="src">
+      <UniqueIdentifier>{2DAB880B-99B4-887C-2230-9F7C8E38947C}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Header Files">
-      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
-      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
+    <Filter Include="vendor">
+      <UniqueIdentifier>{B3738122-9F15-ACF8-88D0-BF4C74113349}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Resource Files">
-      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
-      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    <Filter Include="vendor\mpfr">
+      <UniqueIdentifier>{97EA7CC1-03A0-F5B6-8C94-EF8DF848ECBA}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="vendor\mpfr\include">
+      <UniqueIdentifier>{0AB9BAEC-761A-98FA-FF87-DEAC6BE8CEB9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="vendor\mpir">
+      <UniqueIdentifier>{FAEA7CC1-66A0-F5B6-EF94-EF8D5B49ECBA}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="vendor\mpir\include">
+      <UniqueIdentifier>{6D6CDAF8-D9CD-B706-623B-FEB8CE9BEEC5}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\Main.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\Log.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\nlpch.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\NLEigenSolver.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\BlazeNLEigenSolver.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\EigenNLEigenSolver.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="src\Log.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\nlpch.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\NLEigenSolver.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="src\BlazeNLEigenSolver.h">
-      <Filter>Header Files</Filter>
+      <Filter>src</Filter>
     </ClInclude>
     <ClInclude Include="src\EigenNLEigenSolver.h">
-      <Filter>Header Files</Filter>
+      <Filter>src</Filter>
     </ClInclude>
     <ClInclude Include="src\Instrumentor.h">
-      <Filter>Header Files</Filter>
+      <Filter>src</Filter>
     </ClInclude>
+    <ClInclude Include="src\Log.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\NLEigenSolver.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\nlpch.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="vendor\mpfr\include\mpfr.h">
+      <Filter>vendor\mpfr\include</Filter>
+    </ClInclude>
+    <ClInclude Include="vendor\mpfr\include\mpreal.h">
+      <Filter>vendor\mpfr\include</Filter>
+    </ClInclude>
+    <ClInclude Include="vendor\mpir\include\config.h">
+      <Filter>vendor\mpir\include</Filter>
+    </ClInclude>
+    <ClInclude Include="vendor\mpir\include\gmp-impl.h">
+      <Filter>vendor\mpir\include</Filter>
+    </ClInclude>
+    <ClInclude Include="vendor\mpir\include\gmp-mparam.h">
+      <Filter>vendor\mpir\include</Filter>
+    </ClInclude>
+    <ClInclude Include="vendor\mpir\include\gmp.h">
+      <Filter>vendor\mpir\include</Filter>
+    </ClInclude>
+    <ClInclude Include="vendor\mpir\include\gmpxx.h">
+      <Filter>vendor\mpir\include</Filter>
+    </ClInclude>
+    <ClInclude Include="vendor\mpir\include\longlong.h">
+      <Filter>vendor\mpir\include</Filter>
+    </ClInclude>
+    <ClInclude Include="vendor\mpir\include\mpir.h">
+      <Filter>vendor\mpir\include</Filter>
+    </ClInclude>
+    <ClInclude Include="vendor\mpir\include\mpirxx.h">
+      <Filter>vendor\mpir\include</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="src\BlazeNLEigenSolver.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\EigenNLEigenSolver.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Log.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Main.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\NLEigenSolver.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\nlpch.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

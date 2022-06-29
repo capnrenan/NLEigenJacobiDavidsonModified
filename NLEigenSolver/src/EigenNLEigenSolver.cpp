@@ -156,7 +156,7 @@ bool EigenNLEigenSolver::execute()
 			conv = (theta - Omega(ie)) / theta;
 			LOG_ASSERT(!isnan(conv), "Error: Not-a-number in the computed eigenvalues!");
 
-			LOG_INFO("iter: {0}    rel.error: {1}", iterK, std::abs(conv));
+			LOG_INFO("iter: {0}    rel.error: {1}", iterK, abs((double)conv));
 
 			//Update the new eigenvalue
 			Omega(ie) = theta;
@@ -191,6 +191,8 @@ void EigenNLEigenSolver::readFileAndGetStiffMassMatrices(EigenMatrix& K0, std::v
 	{
 		LOG_ASSERT(fid.fail(), "ERROR: Error in opening the file!");
 	}
+
+	
 
 	if (fid.is_open())
 	{
@@ -332,7 +334,7 @@ void EigenNLEigenSolver::getFreqDependentMassMtx(const std::vector<EigenMatrix>&
 	for (int jj = 1; jj < m_NumberOfMassMtx; jj++)
 	{
 
-		Mn += (jj + 1.0) * std::pow(omega, jj) * MM[jj];
+		Mn += (jj + 1.0) * pow(omega, jj) * MM[jj];
 	}
 }
 
@@ -357,7 +359,7 @@ void EigenNLEigenSolver::getEffectiveStiffMtx(const EigenMatrix& K0, const std::
 
 	for (int jj = 0; jj < m_NumberOfMassMtx; jj++)
 	{
-		Keff -= std::pow(omega, jj + 1.0) * MM[jj];
+		Keff -= pow(omega, jj + 1.0) * MM[jj];
 	}
 }
 
@@ -434,8 +436,8 @@ bool EigenNLEigenSolver::iterativeLinearSolver(const EigenMatrix& A, const Eigen
 	//data_type error = (bmod - Amod * x).norm() / (bnorm2);
 	
 	x = A.fullPivLu().solve(b);
-	data_type bnorm2 = b.norm();
-	data_type error = (b - A * x).norm() / (bnorm2);
+	//data_type bnorm2 = b.norm();
+	//data_type error = (b - A * x).norm() / (bnorm2);
 
 	// Check the L2 norm
 	//auto res = (A * x - b);

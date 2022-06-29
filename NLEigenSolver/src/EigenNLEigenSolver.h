@@ -3,15 +3,15 @@
 
 #include <Eigen/Dense>
 #include <Eigen/Core>
+#include <unsupported/Eigen/MPRealSupport>
 
-#define QUAD_PRECISION 1
 
+#define QUAD_PRECISION 0
 // Check the quad precision
 #if QUAD_PRECISION
-	using EigenMatrix = Eigen::MatrixX<long double>;
-	using EigenVector = Eigen::VectorX<long double>;
-
-	using data_type = long double;
+	using data_type = mpfr::mpreal;
+	using EigenMatrix = Eigen::Matrix<mpfr::mpreal, Eigen::Dynamic, Eigen::Dynamic>;
+	using EigenVector = Eigen::Vector<mpfr::mpreal, Eigen::Dynamic>;
 
 #else
 	using EigenMatrix = Eigen::MatrixXd;

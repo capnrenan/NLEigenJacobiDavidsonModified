@@ -59,8 +59,8 @@
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>nlpch.h</PrecompiledHeaderFile>
       <WarningLevel>Level3</WarningLevel>
-      <PreprocessorDefinitions>NDEBUG;_CONSOLE;DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>src;vendor\Eigen;vendor\Blaze;vendor\CLAPACK\include;vendor\spdlog\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>src;vendor\Eigen;vendor\Blaze;vendor\CLAPACK\include;vendor\spdlog\include;vendor\mpfr\include;vendor\mpir\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
       <Optimization>Disabled</Optimization>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
@@ -70,8 +70,8 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>libf2cd.lib;blasd.lib;lapackd.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>vendor\CLAPACK\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libf2cd.lib;blasd.lib;lapackd.lib;mpir.lib;mpfr.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>vendor\CLAPACK\lib;vendor\mpfr\lib;vendor\mpir\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -79,8 +79,8 @@
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>nlpch.h</PrecompiledHeaderFile>
       <WarningLevel>Level3</WarningLevel>
-      <PreprocessorDefinitions>NDEBUG;_CONSOLE;RELEASE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>src;vendor\Eigen;vendor\Blaze;vendor\CLAPACK\include;vendor\spdlog\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;_RELEASE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>src;vendor\Eigen;vendor\Blaze;vendor\CLAPACK\include;vendor\spdlog\include;vendor\mpfr\include;vendor\mpir\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <Optimization>Full</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
@@ -96,8 +96,8 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>libf2c.lib;blas.lib;lapack.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>vendor\CLAPACK\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libf2c.lib;blas.lib;lapack.lib;mpir.lib;mpfr.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>vendor\CLAPACK\lib;vendor\mpfr\lib;vendor\mpir\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -107,6 +107,16 @@
     <ClInclude Include="src\Log.h" />
     <ClInclude Include="src\NLEigenSolver.h" />
     <ClInclude Include="src\nlpch.h" />
+    <ClInclude Include="vendor\mpfr\include\mpfr.h" />
+    <ClInclude Include="vendor\mpfr\include\mpreal.h" />
+    <ClInclude Include="vendor\mpir\include\config.h" />
+    <ClInclude Include="vendor\mpir\include\gmp-impl.h" />
+    <ClInclude Include="vendor\mpir\include\gmp-mparam.h" />
+    <ClInclude Include="vendor\mpir\include\gmp.h" />
+    <ClInclude Include="vendor\mpir\include\gmpxx.h" />
+    <ClInclude Include="vendor\mpir\include\longlong.h" />
+    <ClInclude Include="vendor\mpir\include\mpir.h" />
+    <ClInclude Include="vendor\mpir\include\mpirxx.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\BlazeNLEigenSolver.cpp" />

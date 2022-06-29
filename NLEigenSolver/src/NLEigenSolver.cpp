@@ -1,6 +1,6 @@
 #include "nlpch.h"
 #include "NLEigenSolver.h"
-#include "BlazeNLEigenSolver.h"
+//#include "BlazeNLEigenSolver.h"
 #include "EigenNLEigenSolver.h"
 
 class MathLibrary
@@ -44,7 +44,8 @@ std::shared_ptr<NLEigenSolver> NLEigenSolver::Create(const std::string& filepath
 
 		case MathLibrary::API::Blaze:
 		{
-			return std::make_shared<BlazeNLEigenSolver>(filepath);
+			//return std::make_shared<BlazeNLEigenSolver>(filepath);
+			return nullptr;
 		}
 	}
 

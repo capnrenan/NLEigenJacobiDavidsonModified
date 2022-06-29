@@ -30,6 +30,8 @@ project "NLEigenSolver"
 	{
 		"%{prj.name}/src/**.h",
 		"%{prj.name}/src/**.cpp",
+		"%{prj.name}/vendor/mpfr/include/**.h",
+		"%{prj.name}/vendor/mpir/include/**.h"
 	}
 	
 	
@@ -38,8 +40,12 @@ project "NLEigenSolver"
 	
 
 	-- Additional library directories
-	libdirs { "%{prj.name}/vendor/CLAPACK/lib" }
+	libdirs { "%{prj.name}/vendor/CLAPACK/lib",
+				"%{prj.name}/vendor/mpfr/lib",
+				"%{prj.name}/vendor/mpir/lib"}
 	
+
+				
 	-- OpenMP support
 	buildoptions { "/openmp" }
 	
@@ -48,6 +54,7 @@ project "NLEigenSolver"
 		"NDEBUG", "_CONSOLE", 
 	}
 	
+	
 	includedirs
 	{
 		"%{prj.name}/src",
@@ -55,6 +62,8 @@ project "NLEigenSolver"
 		"%{prj.name}/vendor/Blaze",
 		"%{prj.name}/vendor/CLAPACK/include",
 		"%{prj.name}/vendor/spdlog/include",
+		"%{prj.name}/vendor/mpfr/include",
+		"%{prj.name}/vendor/mpir/include"
 	}
 
 	-- Filter: Configurations only applied to specific platforms
@@ -65,12 +74,13 @@ project "NLEigenSolver"
 		defines { "_DEBUG" }
 		runtime "Debug"
 		symbols "On"
-		links { "libf2cd.lib","blasd.lib","lapackd.lib"}
+		links { "libf2cd.lib","blasd.lib","lapackd.lib", "mpir.lib", "mpfr.lib"}
 	  
 	filter "configurations:Release"
 		defines { "_RELEASE" }
 		runtime "Release"
 		optimize "On"
 		symbols "On"
-		links { "libf2c.lib","blas.lib","lapack.lib"}	  
+		
+		links { "libf2c.lib","blas.lib","lapack.lib","mpir.lib", "mpfr.lib"}	  
 

@@ -8,8 +8,12 @@
 #include <iomanip>
 
 #include "Log.h"
-
 #include "Instrumentor.h"
+
+#include <mpreal.h>
+
+
+
 //#define ENABLE_BLAZE
 
 #define PROFILING 0
