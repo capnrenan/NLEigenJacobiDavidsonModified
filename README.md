@@ -9,7 +9,7 @@ The nonlinear eingesolver based on the modified Jacobi-Davidson method can be ad
 ```sh
 git clone --recursive https://github.com/renancsales/NLEigenJacobiDavidsonModified
 ```
-After the cloning process, run ```scripts/Setup.bat``` to generate VS 2019 solution file.
+After the cloning process, run ```scripts/SetupProjects.bat``` to generate VS 2019 solution file.
 
 # References
 Dumont, N.A. (2007), On the solution of generalized non-linear complex-symmetric eigenvalue problems. Int. J. Numer. Meth. Engng., 71: 1534-1568. https://doi.org/10.1002/nme.1997
