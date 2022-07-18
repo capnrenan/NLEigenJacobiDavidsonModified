@@ -89,5 +89,6 @@
     <ClCompile Include="src\nlpch.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="src\MathUtils.h" />
   </ItemGroup>
 </Project>
