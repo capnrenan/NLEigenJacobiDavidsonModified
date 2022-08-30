@@ -1,55 +1,32 @@
 #include "nlpch.h"
 #include "NLEigenSolver.h"
-//#include "BlazeNLEigenSolver.h"
-#include "EigenNLEigenSolver.h"
+#include "JacobiDavidsonNLEigenSolver.h"
+#include "inverseFreeKrylovNLEigenSolver.h"
 
-class MathLibrary
-{
-public:
-	enum class API
-	{
-		None = 0, Eigen = 1, Blaze = 2
-	};
-
-	inline static API GetAPI() { return s_MathAPI; };
-
-private:
-	static API s_MathAPI;
-};
-
-// Check the math library API
-#ifdef ENABLE_BLAZE
-	MathLibrary::API MathLibrary::s_MathAPI = MathLibrary::API::Blaze;
-#else
-	MathLibrary::API MathLibrary::s_MathAPI = MathLibrary::API::Eigen;
-#endif 
-
-
-std::shared_ptr<NLEigenSolver> NLEigenSolver::Create(const std::string& filepath)
+std::shared_ptr<NLEigenSolver> NLEigenSolver::Create(const NLEigenMethods::Method& method, const std::string& filepath)
 {
 	Log::Init();
 	// Check the math library API
-	switch (MathLibrary::GetAPI())
+	switch (method)
 	{
-		case MathLibrary::API::None:
+		case NLEigenMethods::Method::None:
 		{
-			LOG_ASSERT(false, "MathLibrary::API::None is currently not supported!");
+			LOG_ASSERT(false, "NLEigenMethods::Method::None is currently not supported!");
 			return nullptr;
 		}
 
-		case MathLibrary::API::Eigen:
+		case NLEigenMethods::Method::JacobiDavidson:
 		{
-			return std::make_shared<EigenNLEigenSolver>(filepath);
+			return std::make_shared<JacobiDavidsonNLEigenSolver>(filepath);
 		}
 
-		case MathLibrary::API::Blaze:
+		case NLEigenMethods::Method::inverseFreeKrylov:
 		{
-			//return std::make_shared<BlazeNLEigenSolver>(filepath);
-			return nullptr;
+			return std::make_shared<inverseFreeKrylovNLEigenSolver>(filepath);
 		}
 	}
 
-	LOG_ASSERT(false, "Unknown Math Library!!!");
+	LOG_ASSERT(false, "Unknown NLEigensolver method!!!");
 	return nullptr;
 
 }

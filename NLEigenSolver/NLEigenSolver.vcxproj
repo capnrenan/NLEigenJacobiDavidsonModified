@@ -101,10 +101,10 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="src\BlazeNLEigenSolver.h" />
-    <ClInclude Include="src\EigenNLEigenSolver.h" />
+    <ClInclude Include="src\JacobiDavidsonNLEigenSolver.h" />
     <ClInclude Include="src\Instrumentor.h" />
     <ClInclude Include="src\Log.h" />
+    <ClInclude Include="src\MathUtils.h" />
     <ClInclude Include="src\NLEigenSolver.h" />
     <ClInclude Include="src\nlpch.h" />
     <ClInclude Include="vendor\mpfr\include\mpfr.h" />
@@ -119,11 +119,9 @@
     <ClInclude Include="vendor\mpir\include\mpirxx.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\BlazeNLEigenSolver.cpp" />
-    <ClCompile Include="src\EigenNLEigenSolver.cpp" />
+    <ClCompile Include="src\JacobiDavidsonNLEigenSolver.cpp" />
     <ClCompile Include="src\Log.cpp" />
     <ClCompile Include="src\Main.cpp" />
-    <ClCompile Include="src\MathUtils.h" />
     <ClCompile Include="src\NLEigenSolver.cpp" />
     <ClCompile Include="src\nlpch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>

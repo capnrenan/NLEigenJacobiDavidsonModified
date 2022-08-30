@@ -21,16 +21,16 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\BlazeNLEigenSolver.h">
-      <Filter>src</Filter>
-    </ClInclude>
-    <ClInclude Include="src\EigenNLEigenSolver.h">
+    <ClInclude Include="src\JacobiDavidsonNLEigenSolver.h">
       <Filter>src</Filter>
     </ClInclude>
     <ClInclude Include="src\Instrumentor.h">
       <Filter>src</Filter>
     </ClInclude>
     <ClInclude Include="src\Log.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\MathUtils.h">
       <Filter>src</Filter>
     </ClInclude>
     <ClInclude Include="src\NLEigenSolver.h">
@@ -71,10 +71,7 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\BlazeNLEigenSolver.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="src\EigenNLEigenSolver.cpp">
+    <ClCompile Include="src\JacobiDavidsonNLEigenSolver.cpp">
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="src\Log.cpp">
@@ -89,6 +86,5 @@
     <ClCompile Include="src\nlpch.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="src\MathUtils.h" />
   </ItemGroup>
 </Project>
