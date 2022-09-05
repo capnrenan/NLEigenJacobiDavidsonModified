@@ -68,16 +68,16 @@ int main(int argc, char* argv[])
     // Plot eigenvalues
     std::cout << "Eigenvalues: \n";
     std::cout << std::setprecision(16) << std::scientific;
-   for (uint32_t i = 0; i < n; i++)
+   for (int i = 0; i < n; i++)
    {
         std::cout << eigenvalues[i] << " ";
    }
    std::cout << std::endl;
 
    std::cout << "Eigenvector: \n";
-   for (uint32_t j = 0; j < n; j++)
+   for (int j = 0; j < n; j++)
    {
-       for (uint32_t i = 0; i < ldz; i++)
+       for (int i = 0; i < ldz; i++)
        {
            std::cout << eigenvector[i*n+j] << " ";
        }

@@ -32,7 +32,11 @@ private:
 	void getFreqDependentStiffMtx(const SparseMatrix& K0, const std::vector<SparseMatrix>& MM, SparseMatrix& Kn, data_type omega);  // Kn(lr)
 	void getFreqDependentMassMtx(const std::vector<SparseMatrix>& MM, SparseMatrix& Mn, data_type omega);          
 	void getGeneralizedFreqDependentMassMtx(const std::vector<SparseMatrix>& MM, SparseMatrix& Mlrls, data_type lr, data_type ls);   // M(lr,ls)
+
+	// This functions compute the smallest eigenpairs of tridiagonal matrix 
+	// by the MRRR algorithm
 	void smallestEigenpairTriDiagMtx(double *diag, double* subdiag, int numberOfBasis, double& eigValue, Vector& eigVector);
+
 	data_type RayleighQuotient(const SparseMatrix& A, const SparseMatrix& B, const Vector& eigVector);
 
 	// Construct the Kyrlov subspace basis
@@ -40,9 +44,8 @@ private:
 	void orthoArnoldiAlgorithm(const SparseMatrix& Ck, const SparseMatrix& B, int numberOfBasis, const Vector& eigVector, DenseMatrix& Zm);
 
 private:
-	std::string m_FilePath;
-	bool m_hasInitialTrial = false;
-	inverseKrylovData m_InputData;
+	std::string m_FilePath = "";
+	inverseKrylovData* m_InputData = nullptr;
 };
 
 

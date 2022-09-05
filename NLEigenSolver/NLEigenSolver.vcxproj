@@ -101,6 +101,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="src\inverseFreeKrylovNLEigenSolver.h" />
     <ClInclude Include="src\JacobiDavidsonNLEigenSolver.h" />
     <ClInclude Include="src\Instrumentor.h" />
     <ClInclude Include="src\Log.h" />
@@ -119,6 +120,7 @@
     <ClInclude Include="vendor\mpir\include\mpirxx.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\inverseFreeKrylovNLEigenSolver.cpp" />
     <ClCompile Include="src\JacobiDavidsonNLEigenSolver.cpp" />
     <ClCompile Include="src\Log.cpp" />
     <ClCompile Include="src\Main.cpp" />

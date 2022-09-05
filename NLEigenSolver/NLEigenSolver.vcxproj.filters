@@ -69,6 +69,7 @@
     <ClInclude Include="vendor\mpir\include\mpirxx.h">
       <Filter>vendor\mpir\include</Filter>
     </ClInclude>
+    <ClInclude Include="src\inverseFreeKrylovNLEigenSolver.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\JacobiDavidsonNLEigenSolver.cpp">
@@ -86,5 +87,6 @@
     <ClCompile Include="src\nlpch.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="src\inverseFreeKrylovNLEigenSolver.cpp" />
   </ItemGroup>
 </Project>
