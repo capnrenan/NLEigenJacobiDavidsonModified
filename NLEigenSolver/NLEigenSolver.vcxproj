@@ -73,6 +73,10 @@
       <AdditionalDependencies>libf2cd.lib;blasd.lib;lapackd.lib;mpir.lib;mpfr.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>vendor\CLAPACK\lib;vendor\mpfr\lib;vendor\mpir\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
+    <PostBuildEvent>
+      <Command>IF EXIST ..\$(ProjectName)\vendor\mpfr\include\mpfr.dll\ (xcopy /Q /E /Y /I ..\$(ProjectName)\vendor\mpfr\include\mpfr.dll ..\bin\Debug-windows-x86_64\NLEigenSolver &gt; nul) ELSE (xcopy /Q /Y /I ..\$(ProjectName)\vendor\mpfr\include\mpfr.dll ..\bin\Debug-windows-x86_64\NLEigenSolver &gt; nul)
+IF EXIST ..\$(ProjectName)\vendor\mpir\include\mpir.dll\ (xcopy /Q /E /Y /I ..\$(ProjectName)\vendor\mpir\include\mpir.dll ..\bin\Debug-windows-x86_64\NLEigenSolver &gt; nul) ELSE (xcopy /Q /Y /I ..\$(ProjectName)\vendor\mpir\include\mpir.dll ..\bin\Debug-windows-x86_64\NLEigenSolver &gt; nul)</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -99,14 +103,18 @@
       <AdditionalDependencies>libf2c.lib;blas.lib;lapack.lib;mpir.lib;mpfr.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>vendor\CLAPACK\lib;vendor\mpfr\lib;vendor\mpir\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
+    <PostBuildEvent>
+      <Command>IF EXIST ..\$(ProjectName)\vendor\mpfr\include\mpfr.dll\ (xcopy /Q /E /Y /I ..\$(ProjectName)\vendor\mpfr\include\mpfr.dll ..\bin\Release-windows-x86_64\NLEigenSolver &gt; nul) ELSE (xcopy /Q /Y /I ..\$(ProjectName)\vendor\mpfr\include\mpfr.dll ..\bin\Release-windows-x86_64\NLEigenSolver &gt; nul)
+IF EXIST ..\$(ProjectName)\vendor\mpir\include\mpir.dll\ (xcopy /Q /E /Y /I ..\$(ProjectName)\vendor\mpir\include\mpir.dll ..\bin\Release-windows-x86_64\NLEigenSolver &gt; nul) ELSE (xcopy /Q /Y /I ..\$(ProjectName)\vendor\mpir\include\mpir.dll ..\bin\Release-windows-x86_64\NLEigenSolver &gt; nul)</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="src\inverseFreeKrylovNLEigenSolver.h" />
-    <ClInclude Include="src\JacobiDavidsonNLEigenSolver.h" />
     <ClInclude Include="src\Instrumentor.h" />
+    <ClInclude Include="src\JacobiDavidsonNLEigenSolver.h" />
     <ClInclude Include="src\Log.h" />
     <ClInclude Include="src\MathUtils.h" />
     <ClInclude Include="src\NLEigenSolver.h" />
+    <ClInclude Include="src\inverseFreeKrylovNLEigenSolver.h" />
     <ClInclude Include="src\nlpch.h" />
     <ClInclude Include="vendor\mpfr\include\mpfr.h" />
     <ClInclude Include="vendor\mpfr\include\mpreal.h" />
@@ -120,11 +128,11 @@
     <ClInclude Include="vendor\mpir\include\mpirxx.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\inverseFreeKrylovNLEigenSolver.cpp" />
     <ClCompile Include="src\JacobiDavidsonNLEigenSolver.cpp" />
     <ClCompile Include="src\Log.cpp" />
     <ClCompile Include="src\Main.cpp" />
     <ClCompile Include="src\NLEigenSolver.cpp" />
+    <ClCompile Include="src\inverseFreeKrylovNLEigenSolver.cpp" />
     <ClCompile Include="src\nlpch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>

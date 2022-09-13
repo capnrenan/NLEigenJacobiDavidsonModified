@@ -14,6 +14,8 @@ inverseFreeKrylovNLEigenSolver::inverseFreeKrylovNLEigenSolver(const std::string
 
 inverseFreeKrylovNLEigenSolver::~inverseFreeKrylovNLEigenSolver()
 {
+	delete m_InputData;
+	m_InputData = nullptr;
 }
 
 bool inverseFreeKrylovNLEigenSolver::execute()
@@ -21,13 +23,52 @@ bool inverseFreeKrylovNLEigenSolver::execute()
 	///Reading data
 	LOG_INFO("Reading filedata...\n");
 
+
 	SparseMatrix K0;
-	std::vector<SparseMatrix> MM;
+	std::vector<SparseMatrix> MM_0, MM_Update;
 	Vector Omega;
-	readFileAndGetStiffMassMatrices(K0, MM, Omega);
+	readFileAndGetStiffMassMatrices(K0, MM_0, Omega);
 
-	
+	// Set the MM_Update as MM_0
+	MM_Update.reserve(m_InputData->NumberOfMassMtx);
+	for (int im = 0; im < m_InputData->NumberOfMassMtx; im++)
+	{
+		MM_Update.emplace_back(MM_0[im]);
+	}
+	// Initialize the eigenvalues and eigenvector to compute
+	Vector Omega(m_InputData->NumberOfEigenvalues);
+	DenseMatrix Phi(m_InputData->Dimensions, m_InputData->NumberOfEigenvalues);
+	SparseMatrix Mlrls(m_InputData->Dimensions, m_InputData->Dimensions);
+	Omega.setZero(); Phi.setOnes();
 
+	// Loop to compute the k smallest eigenpairs of (K(omega),M(omega))
+	for (int k = 0; k < m_InputData->NumberOfEigenvalues; k++)
+	{
+		if (k > 0)
+		{
+			// Get the previous compute eigenpair
+			data_type omega_temp = Omega(k - 1);
+			Vector phi_temp = Phi.col(k - 1);
+
+			// Compute the generalized mass matrix Mlrls
+			getGeneralizedFreqDependentMassMtx(MM_Update, Mlrls, omega_temp, m_InputData->Sigma);
+
+			// DEFLATION PROCEDURE
+			// to do...
+			generalizedDeflationProcedure(K0, MM_Update, Mlrls, omega_temp, phi_temp);
+
+			// Compute the smallest eigenpair of the deflated pencil
+			computeSmallestEigenpairKrylov(K0, MM_Update, MM_0, omega_temp, phi_temp, m_InputData->NumberOfKrylovBasis);
+
+			// Set the computed eigenpairs
+			Omega(k) = omega_temp;
+			Phi.col(k) = phi_temp;
+		}
+		else
+		{
+			computeSmallestEigenpairKrylov(K0, MM_Update, MM_0, Omega(k), (Vector)Phi.col(k), m_InputData->NumberOfKrylovBasis);
+		}
+	}
 	return false;
 }
 
@@ -55,7 +96,10 @@ void inverseFreeKrylovNLEigenSolver::readFileAndGetStiffMassMatrices(SparseMatri
 		std::string line;
 		std::getline(fid, line);
 		// Read #dof, #mass matrices, #eigenvalues
-		fid >> m_InputData->Dimensions >> m_InputData->NumberOfMassMtx  >> m_InputData->NumberOfEigenvalues >> m_InputData->Tolerance;
+		fid >> m_InputData->Dimensions 
+			>> m_InputData->NumberOfMassMtx
+			>> m_InputData->NumberOfEigenvalues
+			>> m_InputData->Tolerance;
 
 		// Set the matrices
 		K0 = SparseMatrix(m_InputData->Dimensions, m_InputData->Dimensions);
@@ -182,6 +226,11 @@ void inverseFreeKrylovNLEigenSolver::getGeneralizedFreqDependentMassMtx(const st
 	}
 }
 
+void inverseFreeKrylovNLEigenSolver::generalizedDeflationProcedure(SparseMatrix& K0, std::vector<SparseMatrix>& MM_Update, SparseMatrix& Mlrls, data_type omega, Vector& phi)
+{
+	// To implement
+}
+
 // Compute the smallest eigenpair using modified free inverse Krylov method
 void inverseFreeKrylovNLEigenSolver::computeSmallestEigenpairKrylov(const SparseMatrix& K0, const std::vector<SparseMatrix>& MM_Update, const std::vector<SparseMatrix>& MM_0, 
 	double& omega, Vector& phi, int numberOfKrylovBasis)
@@ -189,7 +238,7 @@ void inverseFreeKrylovNLEigenSolver::computeSmallestEigenpairKrylov(const Sparse
 	// Initialize
 	SparseMatrix Ck(m_InputData->Dimensions, m_InputData->Dimensions);
 	SparseMatrix Mlambda(m_InputData->Dimensions, m_InputData->Dimensions);
-	SparseMatrix Am(numberOfKrylovBasis, numberOfKrylovBasis);
+	DenseMatrix Am(numberOfKrylovBasis, numberOfKrylovBasis);
 	DenseMatrix Zm(m_InputData->Dimensions, numberOfKrylovBasis);
 	DenseMatrix Qm(numberOfKrylovBasis, numberOfKrylovBasis);
 	Vector eVector(numberOfKrylovBasis); eVector.setOnes();
@@ -208,7 +257,7 @@ void inverseFreeKrylovNLEigenSolver::computeSmallestEigenpairKrylov(const Sparse
 		orthoArnoldiAlgorithm(Ck, Mlambda, numberOfKrylovBasis, phi, Zm);
 		// Compute Am
 		Am = Zm.transpose() * Ck * Zm;
-		orthoLanczosAlgorithm(diag, subdiag, Ck, numberOfKrylovBasis, eVector, Qm);
+		orthoLanczosAlgorithm(diag, subdiag, Am, numberOfKrylovBasis, eVector, Qm);
 
 		// Find the smallest eigenpair of tridiagonal matrix
 		smallestEigenpairTriDiagMtx(diag, subdiag, numberOfKrylovBasis, mu, eVector);
@@ -225,11 +274,20 @@ void inverseFreeKrylovNLEigenSolver::computeSmallestEigenpairKrylov(const Sparse
 		conv = (Ck * phi).norm();
 		if (conv < m_InputData->Tolerance)
 		{
-			phi *= phi.transpose() * Mlambda * phi;
+			phi *= 1.0/(phi.transpose() * Mlambda * phi);
+
+			// Free memory
+			delete[] diag;
+			delete[] subdiag;
 			return;
 		}
 			
 	}
+
+	// Free memory
+	delete[] diag;
+	delete[] subdiag;
+	LOG_ASSERT(false, "Error: It has reached the max. number of iterations!!");
 
 }
 
@@ -244,7 +302,7 @@ void inverseFreeKrylovNLEigenSolver::smallestEigenpairTriDiagMtx(double* diag, d
          *LIWORK, INFO);*/
     integer il = 0, iu = 0, nin = 6, nout = 6, info;
     char jobz = 'V';
-    char range = 'I';
+    char range = 'A';
     double abstol = 1e-10;
     double vl = 0.0, vu = 0.0;
     integer m = numberOfBasis, n = numberOfBasis;
@@ -289,7 +347,7 @@ data_type inverseFreeKrylovNLEigenSolver::RayleighQuotient(const SparseMatrix& A
 }
 
 // Construct the Krylov basis by Lanczos procedure
-void inverseFreeKrylovNLEigenSolver::orthoLanczosAlgorithm(double* diag, double* subdiag, const SparseMatrix& Ck, int numberOfBasis, const Vector& eigVector, DenseMatrix& Qm)
+void inverseFreeKrylovNLEigenSolver::orthoLanczosAlgorithm(double* diag, double* subdiag, const DenseMatrix& Ck, int numberOfBasis, const Vector& eigVector, DenseMatrix& Qm)
 {
 	// Get info and initialize	
 	double norm = 0, alpha = 0, beta = 0.0;

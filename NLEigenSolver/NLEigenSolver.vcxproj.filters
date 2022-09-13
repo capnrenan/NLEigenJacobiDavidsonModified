@@ -21,10 +21,10 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\JacobiDavidsonNLEigenSolver.h">
+    <ClInclude Include="src\Instrumentor.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="src\Instrumentor.h">
+    <ClInclude Include="src\JacobiDavidsonNLEigenSolver.h">
       <Filter>src</Filter>
     </ClInclude>
     <ClInclude Include="src\Log.h">
@@ -34,6 +34,9 @@
       <Filter>src</Filter>
     </ClInclude>
     <ClInclude Include="src\NLEigenSolver.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\inverseFreeKrylovNLEigenSolver.h">
       <Filter>src</Filter>
     </ClInclude>
     <ClInclude Include="src\nlpch.h">
@@ -69,7 +72,6 @@
     <ClInclude Include="vendor\mpir\include\mpirxx.h">
       <Filter>vendor\mpir\include</Filter>
     </ClInclude>
-    <ClInclude Include="src\inverseFreeKrylovNLEigenSolver.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\JacobiDavidsonNLEigenSolver.cpp">
@@ -84,9 +86,11 @@
     <ClCompile Include="src\NLEigenSolver.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="src\inverseFreeKrylovNLEigenSolver.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
     <ClCompile Include="src\nlpch.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="src\inverseFreeKrylovNLEigenSolver.cpp" />
   </ItemGroup>
 </Project>

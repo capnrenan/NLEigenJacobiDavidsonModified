@@ -13,14 +13,14 @@ int main(int argc, char* argv[])
     
     using Method = NLEigenMethods::Method;
     PROFILE_BEGIN_SESSION("Eigenvalue routine");
-    std::shared_ptr<NLEigenSolver> app = NLEigenSolver::Create(Method::JacobiDavidson, argv[1]);
-    bool status = app->execute();
+   /* std::shared_ptr<NLEigenSolver> app = NLEigenSolver::Create(Method::JacobiDavidson, argv[1]);
+    bool status = app->execute();*/
     //bool status = app->findEigenvaluesFromInitialGuess();
     PROFILE_END_SESSION();
 
     // Check status
-    if (!status)
-    	return 1;
+    //if (!status)
+    //	return 1;
 
 
     // Checking the use of dstegr_
@@ -55,7 +55,7 @@ int main(int argc, char* argv[])
      */
     diag[0] = 1.0;
     diag[1] = 4.0;
-    diag[2] = -9.0;
+    diag[2] = 9.0;
     diag[3] = 16.0;
     subdiag[0] = 1.0;
     subdiag[1] = 2.0;
@@ -83,6 +83,11 @@ int main(int argc, char* argv[])
        }
        std::cout << "\n";
    }
+
+   std::cout << "First eigenvector\n";
+   for(int i = 0; i < n; i++)
+       std::cout << eigenvector[i] << " ";
+
 
    // free memory
    delete[] diag;
