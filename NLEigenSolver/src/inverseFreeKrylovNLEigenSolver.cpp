@@ -147,14 +147,90 @@ void inverseFreeKrylovNLEigenSolver::printResults(Vector& Omega, DenseMatrix& Ph
 
 void inverseFreeKrylovNLEigenSolver::getFreqDependentStiffMtx(const SparseMatrix& K0, const std::vector<SparseMatrix>& MM, SparseMatrix& Kn, data_type omega)
 {
+	//Initialize
+	Kn = K0;
+
+	for (int jj = 1; jj < m_InputData->NumberOfMassMtx; jj++)
+	{
+		Kn += (jj)*pow(omega, jj + 1.0) * MM[jj];
+	}
 }
 
 void inverseFreeKrylovNLEigenSolver::getFreqDependentMassMtx(const std::vector<SparseMatrix>& MM, SparseMatrix& Mn, data_type omega)
 {
+	//Initialize
+	Mn = MM[0];
+
+	for (int jj = 1; jj < m_InputData->NumberOfMassMtx; jj++)
+	{
+
+		Mn += (jj + 1.0) * pow(omega, jj) * MM[jj];
+	}
 }
 
 void inverseFreeKrylovNLEigenSolver::getGeneralizedFreqDependentMassMtx(const std::vector<SparseMatrix>& MM, SparseMatrix& Mlrls, data_type lr, data_type ls)
 {
+	//Initialize
+	Mlrls.setZero();
+
+	for (int jj = 0; jj < m_InputData->NumberOfMassMtx; jj++)
+	{
+		for (int kk = 0; kk < jj + 1; kk++)
+		{
+			Mlrls += pow(lr, kk) * pow(ls, jj - kk) * MM[jj];
+		}
+	}
+}
+
+// Compute the smallest eigenpair using modified free inverse Krylov method
+void inverseFreeKrylovNLEigenSolver::computeSmallestEigenpairKrylov(const SparseMatrix& K0, const std::vector<SparseMatrix>& MM_Update, const std::vector<SparseMatrix>& MM_0, 
+	double& omega, Vector& phi, int numberOfKrylovBasis)
+{
+	// Initialize
+	SparseMatrix Ck(m_InputData->Dimensions, m_InputData->Dimensions);
+	SparseMatrix Mlambda(m_InputData->Dimensions, m_InputData->Dimensions);
+	SparseMatrix Am(numberOfKrylovBasis, numberOfKrylovBasis);
+	DenseMatrix Zm(m_InputData->Dimensions, numberOfKrylovBasis);
+	DenseMatrix Qm(numberOfKrylovBasis, numberOfKrylovBasis);
+	Vector eVector(numberOfKrylovBasis); eVector.setOnes();
+	double* diag = new double[numberOfKrylovBasis];
+	double* subdiag = new double[numberOfKrylovBasis];
+	double mu, conv;
+
+	getFreqDependentStiffMtx(K0, MM_Update, Ck, omega);
+	getFreqDependentMassMtx(MM_0, Mlambda, omega);
+	Ck -= omega * Mlambda;
+	omega = RayleighQuotient(Ck, Mlambda, phi);
+
+	for (int k = 0; k < m_InputData->MaxIter; k++)
+	{
+		// Construct a basis Zm using orthogonal basis by Arnoldi algorithm
+		orthoArnoldiAlgorithm(Ck, Mlambda, numberOfKrylovBasis, phi, Zm);
+		// Compute Am
+		Am = Zm.transpose() * Ck * Zm;
+		orthoLanczosAlgorithm(diag, subdiag, Ck, numberOfKrylovBasis, eVector, Qm);
+
+		// Find the smallest eigenpair of tridiagonal matrix
+		smallestEigenpairTriDiagMtx(diag, subdiag, numberOfKrylovBasis, mu, eVector);
+
+		// Update eigenpair solution
+		omega += mu;
+		phi = Zm * Qm * eVector;
+
+		getFreqDependentStiffMtx(K0, MM_Update, Ck, omega);
+		getFreqDependentMassMtx(MM_0, Mlambda, omega);
+		Ck -= omega * Mlambda;
+		
+		// Check error criteria
+		conv = (Ck * phi).norm();
+		if (conv < m_InputData->Tolerance)
+		{
+			phi *= phi.transpose() * Mlambda * phi;
+			return;
+		}
+			
+	}
+
 }
 
 // This functions compute the smallest eigenpairs of tridiagonal matrix 
@@ -168,7 +244,7 @@ void inverseFreeKrylovNLEigenSolver::smallestEigenpairTriDiagMtx(double* diag, d
          *LIWORK, INFO);*/
     integer il = 0, iu = 0, nin = 6, nout = 6, info;
     char jobz = 'V';
-    char range = 'A';
+    char range = 'I';
     double abstol = 1e-10;
     double vl = 0.0, vu = 0.0;
     integer m = numberOfBasis, n = numberOfBasis;

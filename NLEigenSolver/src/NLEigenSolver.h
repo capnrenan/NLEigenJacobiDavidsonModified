@@ -9,7 +9,11 @@
 #define QUAD_PRECISION 0
 // Check the quad precision
 #if QUAD_PRECISION
+
+// Multiple precision libraries
+#include <mpreal.h>
 #include <unsupported/Eigen/MPRealSupport>
+
 
 // Set precision (long double - 128 bits)
 const int digits = 20;

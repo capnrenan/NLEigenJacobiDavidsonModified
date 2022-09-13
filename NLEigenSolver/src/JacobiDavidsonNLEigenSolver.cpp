@@ -423,7 +423,6 @@ void JacobiDavidsonNLEigenSolver::projectEffectiveStiffMatrix(DenseMatrix& Keff,
 	for (int ii = 0; ii < indexEig + 1; ii++)
 	{
 		Keff += (B_s.col(ii) - Keff * B_s.col(ii)) * (B_s.col(ii).transpose());
-	
 	}
 
 }

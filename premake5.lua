@@ -36,7 +36,7 @@ project "NLEigenSolver"
 	
 	
 	pchheader "nlpch.h"
-	pchsource "NLEigenSolver/src/nlpch.cpp"
+	pchsource "%{prj.name}/src/nlpch.cpp"
 	
 
 	-- Additional library directories
@@ -69,6 +69,10 @@ project "NLEigenSolver"
 	-- Filter: Configurations only applied to specific platforms
 	filter "system:windows"
 		systemversion "latest"
+		postbuildcommands {
+		"{COPY} ..\\%{prj.name}\\vendor\\mpfr\\include\\mpfr.dll %{cfg.targetdir}",
+		"{COPY} ..\\%{prj.name}\\vendor\\mpir\\include\\mpir.dll %{cfg.targetdir}",
+		}
 		
 	filter "configurations:Debug"
 		defines { "_DEBUG" }
