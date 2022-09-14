@@ -14,6 +14,13 @@ class inverseFreeKrylovNLEigenSolver : public NLEigenSolver
 		//additional
 		double Sigma;
 		int NumberOfKrylovBasis;
+	};	
+
+	struct resultStatus
+	{
+		double Convergence;
+		int numberOfIterations;
+		bool status; // true if the result converged
 	};
 
 public:
@@ -28,7 +35,7 @@ public:
 	virtual bool findEigenvaluesFromInitialGuess() override;
 
 private:
-	void readFileAndGetStiffMassMatrices(SparseMatrix& K0, std::vector<SparseMatrix>& MM, Vector& Omega);
+	void readFileAndGetStiffMassMatrices(SparseMatrix& K0, std::vector<SparseMatrix>& MM);
 	void printResults(Vector& Omega, DenseMatrix& Phi) const;
 	void getFreqDependentStiffMtx(const SparseMatrix& K0, const std::vector<SparseMatrix>& MM, SparseMatrix& Kn, data_type omega);  // Kn(lr)
 	void getFreqDependentMassMtx(const std::vector<SparseMatrix>& MM, SparseMatrix& Mn, data_type omega);          
@@ -39,7 +46,8 @@ private:
 
 	// Compute the smallest eigenpair using modified free inverse Krylov method
 	void computeSmallestEigenpairKrylov(const SparseMatrix& K0, const std::vector<SparseMatrix>& MM_Update,
-										const std::vector<SparseMatrix>& MM_0, double& omega, Vector& phi, int numberOfKrylovBasis);
+										const std::vector<SparseMatrix>& MM_0, double& omega, Vector& phi, 
+										int numberOfKrylovBasis, resultStatus& status);
 
 	// This functions compute the smallest eigenpairs of tridiagonal matrix 
 	// by the MRRR algorithm
