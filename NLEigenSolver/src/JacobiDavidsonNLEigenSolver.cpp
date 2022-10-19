@@ -45,13 +45,15 @@ bool JacobiDavidsonNLEigenSolver::findEigenvaluesFromInitialGuess()
 		Ktemp.setZero();
 		data_type value = MathUtils::linearRegularFalsi<data_type>(Omega(ie), [&](data_type value)
 			{
-				//getEffectiveStiffMtx(K0, MM, Ktemp, value);
-				Ktemp = K0;
+				//
+				/*Ktemp = K0;
 				for (int jj = 0; jj < m_NumberOfMassMtx; jj++)
 				{
 					Ktemp -= pow(value, jj + 1.0) * MM[jj];
-				}
-				auto sqrtDet = Ktemp.llt().matrixL().determinant();
+				}*/
+
+				getEffectiveStiffMtx(K0, MM, Ktemp, value);
+				data_type sqrtDet = Ktemp.llt().matrixL().determinant();
 				return sqrtDet * sqrtDet;
 			}, status, m_TOL, m_MaxIter);
 
@@ -189,10 +191,10 @@ bool JacobiDavidsonNLEigenSolver::execute()
 			Phi.col(ie) = (1.0 / sqrt(PtMP)) * Phi.col(ie);
 
 			// Evaluate the convergence
-			conv = (theta - Omega(ie)) / theta;
+			conv = 1.0 - abs(Omega(ie) / theta);
 			LOG_ASSERT(!isnan(conv), "Error: Not-a-number in the computed eigenvalues!");
 
-			LOG_INFO("iter: {0}    rel.error: {1}", iterK, abs((double)conv));
+			LOG_INFO("iter: {0}    rel.error: {1}", iterK, conv);
 
 			//Update the new eigenvalue
 			Omega(ie) = theta;

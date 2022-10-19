@@ -10,24 +10,33 @@
 // Entry Point
 int main(int argc, char* argv[])
 {
+
+#if QUAD_PRECISION
+    // Set precision (long double - 128 bits)
+    const int digits = 20;
+    mpfr::mpreal::set_default_prec(mpfr::digits2bits(digits));
+#endif
     
     using Method = NLEigenMethods::Method;
     PROFILE_BEGIN_SESSION("Eigenvalue routine");
-   /* std::shared_ptr<NLEigenSolver> app = NLEigenSolver::Create(Method::JacobiDavidson, argv[1]);
-    bool status = app->execute();*/
+    std::shared_ptr<NLEigenSolver> app = NLEigenSolver::Create(Method::inverseFreeKrylov, argv[1]);
+    bool status = app->execute();
     //bool status = app->findEigenvaluesFromInitialGuess();
     PROFILE_END_SESSION();
 
     // Check status
-    //if (!status)
-    //	return 1;
+    if (!status)
+    	return 1;
 
 
+
+#if DSTEGR_TEST
     // Checking the use of dstegr_
     // To do: 
-     /*dstegr_(JOBZ, RANGE, N, D, E, VL, VU, IL, IU,
-         *ABSTOL, M, W, Z, LDZ, ISUPPZ, WORK, LWORK, IWORK,
-         *LIWORK, INFO);*/
+    /*dstegr_(JOBZ, RANGE, N, D, E, VL, VU, IL, IU,
+     *ABSTOL, M, W, Z, LDZ, ISUPPZ, WORK, LWORK, IWORK,
+     *LIWORK, INFO);*/
+
     integer il = 0, iu = 0, nin = 6, nout = 6, info;
     char jobz = 'V';
     char range = 'A';
@@ -100,5 +109,6 @@ int main(int argc, char* argv[])
 
 
    return info;
+#endif 
 
 }

@@ -15,9 +15,6 @@
 #include <unsupported/Eigen/MPRealSupport>
 
 
-// Set precision (long double - 128 bits)
-const int digits = 20;
-mpfr::mpreal::set_default_prec(mpfr::digits2bits(digits));
 using data_type = mpfr::mpreal;
 using DenseMatrix = Eigen::Matrix<mpfr::mpreal, Eigen::Dynamic, Eigen::Dynamic>;
 using Vector = Eigen::Vector<mpfr::mpreal, Eigen::Dynamic>;
