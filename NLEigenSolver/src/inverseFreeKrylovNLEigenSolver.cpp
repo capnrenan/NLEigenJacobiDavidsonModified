@@ -8,7 +8,7 @@
 inverseFreeKrylovNLEigenSolver::inverseFreeKrylovNLEigenSolver(const std::string& filepath)
     : m_FilePath(filepath)
 {
-
+	Eigen::initParallel();
 
 }
 
@@ -51,10 +51,12 @@ bool inverseFreeKrylovNLEigenSolver::execute()
 	data_type omega_temp;
 	Vector phi_temp;
 
+	LOG_INFO("---------------------------------");
+	LOG_INFO("Running process");
 	// Loop to compute the k smallest eigenpairs of (K(omega),M(omega))
 	for (int k = 0; k < m_InputData.NumberOfEigenvalues; k++)
 	{
-		LOG_INFO("---------------------------------\nEigenvalue #{0}:", k);
+		LOG_INFO("---------------------------------\nEigenpair #{0}:", k);
 
 		if (k > 0)
 		{
@@ -187,7 +189,14 @@ void inverseFreeKrylovNLEigenSolver::readFileAndGetStiffMassMatrices(SparseMatri
 // Print info about the problem
 void inverseFreeKrylovNLEigenSolver::printInfo()
 {
-	std::cout << "INFO" << std::endl;
+	std::cout << "Algorithm: Generalized Inverse Free Krylov" << std::endl;
+	std::cout << "Method for Nonlinear Symmetric Eigenvalue Problem" << std::endl;
+	std::cout << "=====================================================" << std::endl;
+	std::cout << "Author: R. C. Sales" << std::endl;
+	std::cout << "Email: eng.emp.renan@gmail.com" << std::endl;
+	std::cout << "=====================================================" << std::endl;
+
+	std::cout << "PROBLEM INFO" << std::endl;
 	std::cout << "=====================================================" << std::endl;
 	std::cout << "Dimension(s): " << m_InputData.Dimensions << std::endl;
 	std::cout << "Number of mass matrices: " << m_InputData.NumberOfMassMtx << std::endl;
@@ -304,11 +313,21 @@ void inverseFreeKrylovNLEigenSolver::generalizedDeflationProcedure(DenseMatrix& 
 
 		// Error allocate dense to sparse in Eigen (To check and correct!!!!)
 		// Update K0
-		K0 += aux * (MM_Update[0] * phiphiT * MM_Update[0] + omega * (MM_Update[0] * phiphiT * MM_Update[1]
-			+ MM_Update[1] * phiphiT * MM_Update[0]) + omega * omega * MM_Update[1] * phiphiT * MM_Update[1]);
+		/*K0 += aux * (MM_Update[0] * phiphiT * MM_Update[0] + omega * (MM_Update[0] * phiphiT * MM_Update[1]
+			+ MM_Update[1] * phiphiT * MM_Update[0]) + omega * omega * MM_Update[1] * phiphiT * MM_Update[1]);*/
+		K0 += aux * MM_Update[0] * phiphiT * MM_Update[0];
+		K0 += aux * omega * (MM_Update[0] * phiphiT * MM_Update[1]
+			+ MM_Update[1] * phiphiT * MM_Update[0]);
+		K0 += aux * omega * omega * MM_Update[1] * phiphiT * MM_Update[1];
+
+
 		// Update M1
-		MM_Update[0] -= aux * (MM_Update[0] * phiphiT * MM_Update[1]
-			+ MM_Update[1] * phiphiT * MM_Update[0] + 2.0 * omega * MM_Update[1] * phiphiT * MM_Update[1]);
+		/*MM_Update[0] -= aux * (MM_Update[0] * phiphiT * MM_Update[1]
+			+ MM_Update[1] * phiphiT * MM_Update[0] + 2.0 * omega * MM_Update[1] * phiphiT * MM_Update[1]);*/
+		MM_Update[0] -= aux * MM_Update[0] * phiphiT * MM_Update[1];
+		MM_Update[0] -= aux * MM_Update[1] * phiphiT * MM_Update[0];
+		MM_Update[0] -= 2.0 * aux * omega * MM_Update[1] * phiphiT * MM_Update[1];
+
 		// Update M2 
 		MM_Update[1] -= aux * MM_Update[1] * phiphiT * MM_Update[1];
 
@@ -333,13 +352,31 @@ void inverseFreeKrylovNLEigenSolver::computeSmallestEigenpairKrylov(const DenseM
 	data_type conv;
 	double mu;
 
-	getFreqDependentStiffMtx<DenseMatrix>(K0, MM_Update, Ck, omega);
-	getFreqDependentMassMtx<SparseMatrix>(MM_0, Mlambda, omega);
+	// Compute the frequency-dependent stiffness matrix
+	std::thread thread1(&inverseFreeKrylovNLEigenSolver::getFreqDependentStiffMtx<DenseMatrix>, this, std::ref(K0), std::ref(MM_Update),
+		std::ref(Ck), std::ref(omega));
+	// Compute the frequency-dependent mass matrix
+	std::thread thread2(&inverseFreeKrylovNLEigenSolver::getFreqDependentMassMtx<SparseMatrix>, this, std::ref(MM_0), std::ref(Mlambda), std::ref(omega));
+	thread1.join();
+	thread2.join();
+	
+	//thread1.~thread(); thread2.~thread();
+	//getFreqDependentStiffMtx<DenseMatrix>(K0, MM_Update, Ck, omega);
+	//getFreqDependentMassMtx<SparseMatrix>(MM_0, Mlambda, omega);
 
 	omega = RayleighQuotient<DenseMatrix>(Ck, Mlambda, phi);
 
-	getFreqDependentStiffMtx<DenseMatrix>(K0, MM_Update, Ck, omega);
-	getFreqDependentMassMtx<SparseMatrix>(MM_0, Mlambda, omega);
+	// Compute the frequency-dependent stiffness matrix
+	std::thread thread3(&inverseFreeKrylovNLEigenSolver::getFreqDependentStiffMtx<DenseMatrix>, this, std::ref(K0), std::ref(MM_Update),
+		std::ref(Ck), std::ref(omega));
+	// Compute the frequency-dependent mass matrix
+	std::thread thread4(&inverseFreeKrylovNLEigenSolver::getFreqDependentMassMtx<SparseMatrix>, this, std::ref(MM_0), std::ref(Mlambda), std::ref(omega));
+	thread3.join();
+	thread4.join();
+	//thread1.~thread(); thread2.~thread();
+
+	//getFreqDependentStiffMtx<DenseMatrix>(K0, MM_Update, Ck, omega);
+	//getFreqDependentMassMtx<SparseMatrix>(MM_0, Mlambda, omega);
 
 	Ck -= omega * Mlambda;
 
@@ -355,15 +392,22 @@ void inverseFreeKrylovNLEigenSolver::computeSmallestEigenpairKrylov(const DenseM
 		orthoLanczosAlgorithm(diag, subdiag, Am, numberOfKrylovBasis, eVector, Qm);
 
 		// Find the smallest eigenpair of tridiagonal matrix
-		eVector.setZero();
+		//eVector.setZero();
 		smallestEigenpairTriDiagMtx(diag, subdiag, numberOfKrylovBasis, mu, eVector);
 
 		// Update eigenpair solution
 		omega += mu;
-		phi = Zm * Qm * eVector;
+		phi = (Zm * Qm) * eVector;
 
-		getFreqDependentStiffMtx<DenseMatrix>(K0, MM_Update, Ck, omega);
-		getFreqDependentMassMtx<SparseMatrix>(MM_0, Mlambda, omega);
+		//getFreqDependentStiffMtx<DenseMatrix>(K0, MM_Update, Ck, omega);
+		//getFreqDependentMassMtx<SparseMatrix>(MM_0, Mlambda, omega);
+		std::thread thread5(&inverseFreeKrylovNLEigenSolver::getFreqDependentStiffMtx<DenseMatrix>, this, std::ref(K0), std::ref(MM_Update),
+			std::ref(Ck), std::ref(omega));
+		// Compute the frequency-dependent mass matrix
+		std::thread thread6(&inverseFreeKrylovNLEigenSolver::getFreqDependentMassMtx<SparseMatrix>, this, std::ref(MM_0), std::ref(Mlambda), std::ref(omega));
+		thread5.join();
+		thread6.join();
+		//thread1.~thread(); thread2.~thread();
 		Ck -= omega * Mlambda;
 		
 		// Check error criteria
@@ -464,7 +508,7 @@ void inverseFreeKrylovNLEigenSolver::orthoLanczosAlgorithm(double* diag, double*
 	// Get info and initialize	
 	data_type norm = 0, alpha = 0, beta = 0.0;
 	Vector  w(numberOfBasis); w.setZero();
-	Qm.setZero();
+	//Qm.setZero();
 	norm = eigVector.transpose() * eigVector;
 	norm = sqrt(norm);
 	Qm.col(0) = 1.0 / norm * eigVector;
@@ -511,7 +555,7 @@ void inverseFreeKrylovNLEigenSolver::orthoArnoldiAlgorithm(const DenseMatrix& Ck
 	// Get info and initialize
 	Vector w(numberOfBasis);
 	DenseMatrix Hm(numberOfBasis, numberOfBasis);
-	data_type norm = 0;
+	data_type norm = 0.0;
 
 	norm = sqrt(eigVector.transpose() * B * eigVector);
 	Zm.col(0) = 1 / norm * eigVector;
