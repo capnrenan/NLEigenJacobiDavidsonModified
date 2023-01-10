@@ -13,13 +13,13 @@ int main(int argc, char* argv[])
 
 #if QUAD_PRECISION
     // Set precision (long double - 128 bits)
-    const int digits = 20;
+    const int digits = (int)SET_PRECISION_DIGITS;
     mpfr::mpreal::set_default_prec(mpfr::digits2bits(digits));
 #endif
     
     using Method = NLEigenMethods::Method;
     PROFILE_BEGIN_SESSION("Eigenvalue routine");
-    std::shared_ptr<NLEigenSolver> app = NLEigenSolver::Create(Method::inverseFreeKrylov, argv[1]);
+    auto app = NLEigenSolver::Create(Method::inverseFreeKrylov, argv[1]);
     bool status = app->execute();
     //bool status = app->findEigenvaluesFromInitialGuess();
     PROFILE_END_SESSION();
@@ -27,7 +27,6 @@ int main(int argc, char* argv[])
     // Check status
     if (!status)
     	return 1;
-
 
 
 #if DSTEGR_TEST

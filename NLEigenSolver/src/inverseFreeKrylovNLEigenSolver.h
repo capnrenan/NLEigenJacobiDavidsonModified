@@ -4,6 +4,28 @@
 
 class inverseFreeKrylovNLEigenSolver : public NLEigenSolver
 {
+	struct resultStatus
+	{
+		data_type Convergence;
+		int NumberOfIterations;
+		bool Status; // true if the result converge
+	};
+
+	// It is only used the modified Incomplete Cholesky with
+	// dual threshold to compute the precondioner as available
+	// in Eigen 3.4.90. 
+	// 
+	// Ref.
+	// 1. C-J. Lin and J. J. Moré, Incomplete Cholesky Factorizations with Limited memory, 
+	// SIAM J. Sci. Comput. 21(1), pp. 24-45, 1999
+	// 2. https://eigen.tuxfamily.org/dox/classEigen_1_1IncompleteCholesky.html#ad822e66656638a9cf84087ed228514e7
+	// 
+	struct preconditionerOptions
+	{
+		bool IsUsingPreconditioner = false;
+		double InitialShiftSigma = 1e-3;
+	};
+
 	struct inverseKrylovData
 	{
 		int Dimensions;
@@ -14,15 +36,11 @@ class inverseFreeKrylovNLEigenSolver : public NLEigenSolver
 		//additional
 		double Sigma = 1e6;
 		int NumberOfKrylovBasis = 10;
+
+		preconditionerOptions PrecondOptions;
 	};	
 
-	struct resultStatus
-	{
-		data_type Convergence;
-		int numberOfIterations;
-		bool status; // true if the result converge
-	};
-
+	
 public:
 	inverseFreeKrylovNLEigenSolver(const std::string& filepath);
 	~inverseFreeKrylovNLEigenSolver();
@@ -67,7 +85,12 @@ private:
 	void orthoLanczosAlgorithm(double* diag, double* subdiag, const DenseMatrix& Ck, int numberOfBasis, const Vector& eigVector, DenseMatrix& Qm);
 	void orthoArnoldiAlgorithm(const DenseMatrix& Ck, const DenseMatrix& B, int numberOfBasis, const Vector& eigVector, DenseMatrix& Zm);
 
-	
+	// preconditioned version of Arnoldi algorithm
+	// invLktLk - inv(L^t*L)
+	// L is lower triangle matrix obtained by a incomplemte Cholesky factorization. 
+	void orthoPreconditionedArnoldiAlgorithm(const DenseMatrix& Ck, const DenseMatrix& B, int numberOfBasis, const Vector& eigVector, DenseMatrix& Zm, DenseMatrix& invLktLk);
+
+	bool SetAndComputePreconditioner(const DenseMatrix& Ck, DenseMatrix& Minv);
 
 private:
 	std::string m_FilePath = "";

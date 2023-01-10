@@ -5,6 +5,9 @@
 #include "f2c.h"
 #include "clapack.h"
 
+#include <Eigen/IterativeLinearSolvers>
+
+
 inverseFreeKrylovNLEigenSolver::inverseFreeKrylovNLEigenSolver(const std::string& filepath)
     : m_FilePath(filepath)
 {
@@ -20,7 +23,7 @@ inverseFreeKrylovNLEigenSolver::~inverseFreeKrylovNLEigenSolver()
 bool inverseFreeKrylovNLEigenSolver::execute()
 {
 	///Reading data
-	std::cout << "Reading filedata: " << m_FilePath << std::endl << std::endl;
+	std::cout << "Reading filedata: " << m_FilePath << std::endl;
 	//LOG_INFO("Reading filedata: {0}\n", m_FilePath);
 	SparseMatrix K0;
 	std::vector<SparseMatrix> MM_0;
@@ -28,6 +31,7 @@ bool inverseFreeKrylovNLEigenSolver::execute()
 	readFileAndGetStiffMassMatrices(K0, MM_0);
 	DenseMatrix Kt = K0;
 
+	
 	// Print info about the problem
 	printInfo();
 
@@ -62,7 +66,7 @@ bool inverseFreeKrylovNLEigenSolver::execute()
 		{
 			// Get the previous compute eigenpair
 			omega_temp = Omega(k - 1);
-			phi_temp = Phi.col(k - 1);
+			phi_temp = Phi.col(k - (int)1);
 
 			// DEFLATION PROCEDURE
 			generalizedDeflationProcedure(Kt, MM_Update, Mlrls, omega_temp, phi_temp);
@@ -88,9 +92,9 @@ bool inverseFreeKrylovNLEigenSolver::execute()
 			Phi.col(k) = phi_temp;
 		}
 
-		LOG_INFO("#Iter: {0}, conv = {1}", resultStatus.numberOfIterations, resultStatus.Convergence);
+		LOG_INFO("#Iter: {0}, conv = {1}", resultStatus.NumberOfIterations, resultStatus.Convergence);
 
-		if (!resultStatus.status)
+		if (!resultStatus.Status)
 		{
 			LOG_WARN("Error: It has not converged!");
 			return false;
@@ -171,7 +175,7 @@ void inverseFreeKrylovNLEigenSolver::readFileAndGetStiffMassMatrices(SparseMatri
 					fid >> valueIJ;
 					// It stores only the nonzero elements into the K0 matrix
 					if (!(valueIJ == 0.0))
-						Mtemp.insert(ii, jj) = valueIJ;
+						Mtemp.insert(ii, jj) = (data_type)valueIJ;
 
 				}
 			}
@@ -189,12 +193,14 @@ void inverseFreeKrylovNLEigenSolver::readFileAndGetStiffMassMatrices(SparseMatri
 // Print info about the problem
 void inverseFreeKrylovNLEigenSolver::printInfo()
 {
+	std::cout << "=====================================================" << std::endl;
 	std::cout << "Algorithm: Generalized Inverse Free Krylov" << std::endl;
 	std::cout << "Method for Nonlinear Symmetric Eigenvalue Problem" << std::endl;
 	std::cout << "=====================================================" << std::endl;
 	std::cout << "Author: R. C. Sales" << std::endl;
 	std::cout << "Email: eng.emp.renan@gmail.com" << std::endl;
-	std::cout << "=====================================================" << std::endl;
+	std::cout << "Last update: Oct/2022" << std::endl;
+	std::cout << "=====================================================" << std::endl << std::endl;
 
 	std::cout << "PROBLEM INFO" << std::endl;
 	std::cout << "=====================================================" << std::endl;
@@ -347,10 +353,15 @@ void inverseFreeKrylovNLEigenSolver::computeSmallestEigenpairKrylov(const DenseM
 	DenseMatrix Zm(m_InputData.Dimensions, numberOfKrylovBasis);
 	DenseMatrix Qm(numberOfKrylovBasis, numberOfKrylovBasis);
 	Vector eVector(numberOfKrylovBasis); eVector.setOnes();
+	DenseMatrix Minv; // precondiotioner
 	double* diag = new double[numberOfKrylovBasis];
 	double* subdiag = new double[numberOfKrylovBasis];
-	data_type conv;
+	double conv;
 	double mu;
+
+
+	
+
 
 	// Compute the frequency-dependent stiffness matrix
 	std::thread thread1(&inverseFreeKrylovNLEigenSolver::getFreqDependentStiffMtx<DenseMatrix>, this, std::ref(K0), std::ref(MM_Update),
@@ -364,6 +375,9 @@ void inverseFreeKrylovNLEigenSolver::computeSmallestEigenpairKrylov(const DenseM
 	//getFreqDependentStiffMtx<DenseMatrix>(K0, MM_Update, Ck, omega);
 	//getFreqDependentMassMtx<SparseMatrix>(MM_0, Mlambda, omega);
 
+	// Compute the preconditioner
+	//bool precondResult = SetAndComputePreconditioner(Ck, Minv);
+	
 	omega = RayleighQuotient<DenseMatrix>(Ck, Mlambda, phi);
 
 	// Compute the frequency-dependent stiffness matrix
@@ -383,10 +397,19 @@ void inverseFreeKrylovNLEigenSolver::computeSmallestEigenpairKrylov(const DenseM
 	LOG_INFO("In computeSmallestEigenpairKrylov");
 	for (int k = 0; k < m_InputData.MaxIter; k++)
 	{
-		conv = phi.transpose() * phi;
-		conv = sqrt(conv);
+		conv = (double)(phi.transpose() * phi);
+		conv = (double)sqrt(conv);
+
 		// Construct a basis Zm using orthogonal basis by Arnoldi algorithm
-		orthoArnoldiAlgorithm(Ck, Mlambda, numberOfKrylovBasis, phi, Zm);
+		if (false)
+		{
+			orthoPreconditionedArnoldiAlgorithm(Ck, Mlambda, numberOfKrylovBasis, phi, Zm, Minv);
+		}
+		else
+		{
+			orthoArnoldiAlgorithm(Ck, Mlambda, numberOfKrylovBasis, phi, Zm);
+		}
+		
 		// Compute Am
 		Am = Zm.transpose() * Ck * Zm;
 		orthoLanczosAlgorithm(diag, subdiag, Am, numberOfKrylovBasis, eVector, Qm);
@@ -414,7 +437,7 @@ void inverseFreeKrylovNLEigenSolver::computeSmallestEigenpairKrylov(const DenseM
 		//conv = (Ck * phi).norm();
 		
 		data_type phiNorm = phi.transpose() * phi;
-		conv = abs(1.0 - conv / (sqrt(phiNorm)));
+		conv = (double)abs(1.0 - conv / (sqrt(phiNorm)));
 		//LOG_INFO("Iter: {0}, conv = {1}", k, conv);
 		if (conv < m_InputData.Tolerance)
 		{
@@ -422,8 +445,8 @@ void inverseFreeKrylovNLEigenSolver::computeSmallestEigenpairKrylov(const DenseM
 
 			// Set status
 			status.Convergence = conv;
-			status.numberOfIterations = k;
-			status.status = true;
+			status.NumberOfIterations = k;
+			status.Status = true;
 
 			// Free memory
 			delete[] diag;
@@ -439,8 +462,8 @@ void inverseFreeKrylovNLEigenSolver::computeSmallestEigenpairKrylov(const DenseM
 
 	// Set status
 	status.Convergence = (double)conv;
-	status.numberOfIterations = m_InputData.MaxIter;
-	status.status = false;
+	status.NumberOfIterations = m_InputData.MaxIter;
+	status.Status = false;
 
 	LOG_WARN("conv = {0}", status.Convergence);
 	LOG_ASSERT(false, "Error: It has reached the max. number of iterations!!");
@@ -458,7 +481,7 @@ void inverseFreeKrylovNLEigenSolver::smallestEigenpairTriDiagMtx(double* diag, d
     integer il = 0, iu = 0, nin = 6, nout = 6, info;
     char jobz = 'V';
     char range = 'A';
-    double abstol = 1e-14;
+    double abstol = 1e-12;
     double vl = 0.0, vu = 0.0;
     integer m = numberOfBasis, n = numberOfBasis;
     integer ldz, liwork, lwork;
@@ -467,7 +490,7 @@ void inverseFreeKrylovNLEigenSolver::smallestEigenpairTriDiagMtx(double* diag, d
     lwork = 18 * n;
     double* eigenvalues = new double[n];
     double* work = new double[lwork];
-    double* eigenvector = new double[ldz * n];
+    double* eigenvector = new double[(int)(ldz * n)];
     integer* isuppz = new integer[(2 * n)];
     integer* iwork = new integer[liwork];
 
@@ -573,4 +596,60 @@ void inverseFreeKrylovNLEigenSolver::orthoArnoldiAlgorithm(const DenseMatrix& Ck
 		Zm.col(i + 1) = 1 / norm * w;
 	}
 
+}
+
+void inverseFreeKrylovNLEigenSolver::orthoPreconditionedArnoldiAlgorithm(const DenseMatrix& Ck, const DenseMatrix& B, int numberOfBasis, const Vector& eigVector, DenseMatrix& Zm, DenseMatrix& invLktLk)
+{
+	// Get info and initialize
+	Vector w(numberOfBasis);
+	DenseMatrix Hm(numberOfBasis, numberOfBasis);
+	data_type norm = 0.0;
+
+	norm = sqrt(eigVector.transpose() * B * eigVector);
+	Zm.col(0) = 1 / norm * eigVector;
+
+	auto Lres = invLktLk * Ck;
+	// B-orthonormal basis by the Arnoldi algorithm
+	for (int i = 0; i < numberOfBasis - 1; i++)
+	{
+		w = Lres * Zm.col(i);
+		for (int j = 0; j < i + 1; j++)
+		{
+			Hm(j, i) = Zm.col(j).transpose() * B * w;
+			w -= Hm(j, i) * Zm.col(j);
+		}
+		norm = sqrt(w.transpose() * B * w);
+		Zm.col(i + 1) = 1 / norm * w;
+	}
+}
+
+bool inverseFreeKrylovNLEigenSolver::SetAndComputePreconditioner(const DenseMatrix& Ck, DenseMatrix& Minv)
+{
+	
+	// Compute the preconditioner
+	
+#if 0
+	auto temp = Ck.selfadjointView<Eigen::Lower>();
+	if (m_InputData.PrecondOptions.IsUsingPreconditioner)
+	{
+		Eigen::IncompleteCholesky<double, Eigen::Lower, Eigen::NaturalOrdering<int>> preconditionerSolver;
+		preconditionerSolver.analyzePattern(temp);
+		//preconditionerSolver.compute(temp);
+		// Check if the preconditioner was well calculated
+		if (preconditionerSolver.info() != Eigen::Success)
+		{
+			auto Mnv = preconditionerSolver.matrixL();
+			Minv = Mnv * Mnv.transpose();
+			Minv = Minv.inverse();
+			//
+			return true;
+		}
+		else
+			LOG_WARN("The computation of the preconditioner has failed!");
+		
+
+	}
+#endif
+
+	return false;
 }
